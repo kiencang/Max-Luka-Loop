@@ -21,8 +21,9 @@ Người dùng đưa tệp PDF theo một trong hai cách; cả hai đều dùng
 
 ## 3. Đọc nội dung PDF
 
-- **PDF tới 10 trang:** đọc cả tệp bằng `Read`.
-- **PDF trên 10 trang:** `Read` chỉ đọc theo cụm trang (tham số `pages`, tối đa 20 trang mỗi lần, vd `"1-10"`). Cách đọc này cần chương trình `pdftoppm` (poppler) trên máy. Nếu `Read` báo `pdftoppm is not installed`, **không tự cài phần mềm**; coi như agent không đọc trực tiếp được PDF và làm theo mục **"Agent không đọc trực tiếp được PDF"** trong `SKILL.md` (render từng cụm trang bằng `RenderPages` rồi mở xem các ảnh trang).
+- **PDF tới 10 trang** (theo `total_pages` ở Bước 1): đọc cả tệp bằng `Read`.
+- **PDF trên 10 trang:** **không** dùng `Read` với tham số `pages`. Cách đọc theo cụm trang đó cần chương trình `pdftoppm` (poppler), hầu như không có sẵn trên Windows, và chỉ gây thêm một lời gọi lỗi cùng thông báo `pdftoppm is not installed` làm người dùng hoang mang. Đi thẳng mục **"Agent không đọc trực tiếp được PDF"** trong `SKILL.md`: render từng cụm trang bằng `RenderPages` (PyMuPDF có sẵn trong `extract_assets.exe`) rồi mở xem các ảnh trang.
+- Nếu vì lý do nào đó vẫn gặp thông báo `pdftoppm is not installed`, **không tự cài phần mềm** và không hướng dẫn người dùng cài; chuyển sang `RenderPages` như trên.
 
 ## 4. Ánh xạ thao tác trong `SKILL.md` sang công cụ Claude Code
 
