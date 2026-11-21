@@ -1,0 +1,230 @@
+{
+  "manifest": {
+    "pdf": "journal_2col_academic.pdf",
+    "dpi": 180,
+    "total_pages": 4,
+    "scanned_pages": [],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "vector",
+        "drawings": 9,
+        "placement": "figure",
+        "box": [
+          0.537,
+          0.342,
+          0.913,
+          0.511
+        ],
+        "width_px": 581,
+        "height_px": 375,
+        "caption": "Figure 1: Field telemetry architecture linking surface precipitation, IR thermography, and subgrade pore-pressure sensors into the automated hydrograph QA pipeline.",
+        "context": null
+      },
+      {
+        "file": "fig_p3_1.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.073,
+          0.13,
+          0.154,
+          0.187
+        ],
+        "width_px": 141,
+        "height_px": 141,
+        "caption": null,
+        "context": "Permeable Granite Interlock 3.1-in granite blocks, #89 chip | joints"
+      },
+      {
+        "file": "fig_p3_2.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.073,
+          0.195,
+          0.154,
+          0.252
+        ],
+        "width_px": 141,
+        "height_px": 141,
+        "caption": null,
+        "context": "Vegetated Curb Bioswale Carex sedges, river cobble inlet | apron"
+      },
+      {
+        "file": "fig_p3_3.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.073,
+          0.26,
+          0.154,
+          0.317
+        ],
+        "width_px": 141,
+        "height_px": 141,
+        "caption": null,
+        "context": "High-Albedo Mineral Coat | TiO2-silica micro-textured binder"
+      },
+      {
+        "file": "fig_p3_4.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.208,
+          0.341,
+          0.793,
+          0.54
+        ],
+        "width_px": 891,
+        "height_px": 439,
+        "caption": "Figure 2: Paired thermal infrared thermographs recorded at 14:40 local time under 91 °F (32.8 °C) ambient air temperature. Panel (A) conventional unshaded asphalt reaches 52.8 °C along centerline wheel paths, while Panel (B) tree-shaded permeable granite promenade stays between 27.5 and 33.0 °C.",
+        "context": null
+      },
+      {
+        "file": "fig_p3_5.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.074,
+          0.634,
+          0.926,
+          0.848
+        ],
+        "width_px": 1288,
+        "height_px": 472,
+        "caption": "Figure 3: Empirical relationship between peak daytime surface temperature and 15-minute subsurface infiltration velocity across n = 148 monitored corridor intervals (OLS fit R2 = 0.84, shaded 95% confidence band; vertical dashed line marks critical clogging threshold ksat = 0.04 cm/s).",
+        "context": null
+      }
+    ]
+  },
+  "stdout_manifest": {
+    "pdf": "journal_2col_academic.pdf",
+    "dpi": 180,
+    "total_pages": 4,
+    "scanned_pages": [],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "vector",
+        "drawings": 9,
+        "placement": "figure",
+        "box": [
+          0.537,
+          0.342,
+          0.913,
+          0.511
+        ],
+        "width_px": 581,
+        "height_px": 375,
+        "caption": "Figure 1: Field telemetry architecture linking surface precipitation, IR thermography, and subgrade pore-pressure sensors into the automated hydrograph QA pipeline.",
+        "context": null
+      },
+      {
+        "file": "fig_p3_1.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.073,
+          0.13,
+          0.154,
+          0.187
+        ],
+        "width_px": 141,
+        "height_px": 141,
+        "caption": null,
+        "context": "Permeable Granite Interlock 3.1-in granite blocks, #89 chip | joints"
+      },
+      {
+        "file": "fig_p3_2.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.073,
+          0.195,
+          0.154,
+          0.252
+        ],
+        "width_px": 141,
+        "height_px": 141,
+        "caption": null,
+        "context": "Vegetated Curb Bioswale Carex sedges, river cobble inlet | apron"
+      },
+      {
+        "file": "fig_p3_3.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.073,
+          0.26,
+          0.154,
+          0.317
+        ],
+        "width_px": 141,
+        "height_px": 141,
+        "caption": null,
+        "context": "High-Albedo Mineral Coat | TiO2-silica micro-textured binder"
+      },
+      {
+        "file": "fig_p3_4.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.208,
+          0.341,
+          0.793,
+          0.54
+        ],
+        "width_px": 891,
+        "height_px": 439,
+        "caption": "Figure 2: Paired thermal infrared thermographs recorded at 14:40 local time under 91 °F (32.8 °C) ambient air temperature. Panel...",
+        "context": null
+      },
+      {
+        "file": "fig_p3_5.png",
+        "page": 3,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.074,
+          0.634,
+          0.926,
+          0.848
+        ],
+        "width_px": 1288,
+        "height_px": 472,
+        "caption": "Figure 3: Empirical relationship between peak daytime surface temperature and 15-minute subsurface infiltration velocity across n = 148 monitored corridor...",
+        "context": null
+      }
+    ]
+  },
+  "png_sha256": {
+    "fig_p1_1.png": "6efa43a5ced113c07494c44704e5cfab9fa172394e05b56b5120bc014e839e26",
+    "fig_p3_1.png": "50e0e7ce1acc55a245adc9c05ed3a5d2c64141230a768229b0496c3e2dbfdb26",
+    "fig_p3_2.png": "f4380b4cf217165c633b11d6888cf85a86438f8c91b4864b23727afcaa6cae06",
+    "fig_p3_3.png": "d427197084cd30fb781fc8a486a224f53cff718afd62301830939d0fccde824e",
+    "fig_p3_4.png": "2c5efb989587531bfd1ea58194cbb6e5c86db1dacfb15d5bcf825b2fd79617f0",
+    "fig_p3_5.png": "0688d1174212f3df8176eadbef097179033e470fcff55b9849c1bf9e74eeaf27"
+  }
+}

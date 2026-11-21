@@ -1,0 +1,12 @@
+input/*
+!input/.gitkeep
+output/
+work/
+tools/extract_assets/
+tools/models/
+dist/
+build/
+*.spec
+__pycache__/
+*.pyc
+.claude/settings.local.json

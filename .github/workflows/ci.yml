@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - 'tests/**'
+      - '.agents/**'
+      - 'AGENTS.md'
+      - 'dev/egret/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - 'tests/**'
+      - '.agents/**'
+      - 'AGENTS.md'
+      - 'dev/egret/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.7'
+          cache: 'pip'
+          cache-dependency-path: 'tools/src/requirements-build.txt'
+
+      - name: Install Python build and test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r tools/src/requirements-build.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Fetch pinned Egret ONNX model (SHA-256 verified)
+        shell: pwsh
+        run: ./dev/egret/fetch_model.ps1
+
+      - name: Restore cached extract_assets bundle (by source and model hash)
+        id: extractor-cache
+        uses: actions/cache@v4
+        with:
+          path: tools/extract_assets
+          key: extractor-${{ runner.os }}-${{ hashFiles('tools/src/**/*.py', 'tools/src/requirements-build.txt', 'tools/build_extractor.ps1', 'dev/egret/fetch_model.ps1') }}
+
+      - name: Build extract_assets.exe on cache miss
+        if: steps.extractor-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: ./tools/build_extractor.ps1 -RequireEgretModel
+
+      - name: Run Python unit tests
+        env:
+          PYTHONUTF8: '1'
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Run PowerShell test suite (Windows PowerShell 5.1)
+        shell: powershell
+        run: ./tests/run_tests.ps1
+
+      - name: Run PowerShell test suite (PowerShell 7)
+        shell: pwsh
+        run: ./tests/run_tests.ps1

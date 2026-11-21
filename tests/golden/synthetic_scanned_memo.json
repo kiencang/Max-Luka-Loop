@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "pdf": "synthetic_scanned_memo.pdf",
+    "dpi": 180,
+    "total_pages": 2,
+    "scanned_pages": [
+      1,
+      2
+    ],
+    "figures": []
+  },
+  "stdout_manifest": {
+    "pdf": "synthetic_scanned_memo.pdf",
+    "dpi": 180,
+    "total_pages": 2,
+    "scanned_pages": [
+      1,
+      2
+    ],
+    "figures": []
+  },
+  "png_sha256": {}
+}

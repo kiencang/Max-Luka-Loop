@@ -1,0 +1,94 @@
+{
+  "manifest": {
+    "pdf": "synthetic_mixed_scan_report.pdf",
+    "dpi": 180,
+    "total_pages": 3,
+    "scanned_pages": [
+      2
+    ],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.176,
+          0.217,
+          0.823,
+          0.521
+        ],
+        "width_px": 983,
+        "height_px": 660,
+        "caption": "Figure 1: Native digital facade photograph captured prior to appending scanned field sheets.",
+        "context": null
+      },
+      {
+        "file": "fig_p3_1.png",
+        "page": 3,
+        "source": "vector",
+        "drawings": 6,
+        "placement": "figure",
+        "box": [
+          0.215,
+          0.159,
+          0.782,
+          0.27
+        ],
+        "width_px": 863,
+        "height_px": 253,
+        "caption": "Figure 3: Native vector summary diagram on electronic Page 3.",
+        "context": null
+      }
+    ]
+  },
+  "stdout_manifest": {
+    "pdf": "synthetic_mixed_scan_report.pdf",
+    "dpi": 180,
+    "total_pages": 3,
+    "scanned_pages": [
+      2
+    ],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.176,
+          0.217,
+          0.823,
+          0.521
+        ],
+        "width_px": 983,
+        "height_px": 660,
+        "caption": "Figure 1: Native digital facade photograph captured prior to appending scanned field sheets.",
+        "context": null
+      },
+      {
+        "file": "fig_p3_1.png",
+        "page": 3,
+        "source": "vector",
+        "drawings": 6,
+        "placement": "figure",
+        "box": [
+          0.215,
+          0.159,
+          0.782,
+          0.27
+        ],
+        "width_px": 863,
+        "height_px": 253,
+        "caption": "Figure 3: Native vector summary diagram on electronic Page 3.",
+        "context": null
+      }
+    ]
+  },
+  "png_sha256": {
+    "fig_p1_1.png": "305afa37a48b1a12f5487a8ee5582ce161c8c72e85b64f9911b17b609d3bb667",
+    "fig_p3_1.png": "1c256288cbda5c3e39fb320215f92b827874893e5287e8399bf2b49ef4e583c6"
+  }
+}

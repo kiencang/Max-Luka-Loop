@@ -1,0 +1,125 @@
+{
+  "manifest": {
+    "pdf": "product_datasheet_grid.pdf",
+    "dpi": 180,
+    "total_pages": 2,
+    "scanned_pages": [],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.44,
+          0.329,
+          0.875,
+          0.558
+        ],
+        "width_px": 668,
+        "height_px": 503,
+        "caption": "Figure 1: Production S400-Pro telemetry enclosure displaying anodized aluminum corner rails, stainless U-bolt clamp, sealed diagnostic port, and shielded hydrophobic vent cable.",
+        "context": null
+      },
+      {
+        "file": "fig_p1_2.png",
+        "page": 1,
+        "source": "vector",
+        "drawings": 15,
+        "placement": "figure",
+        "box": [
+          0.391,
+          0.694,
+          0.923,
+          0.81
+        ],
+        "width_px": 813,
+        "height_px": 266,
+        "caption": "Figure 2: Hardware power and telemetry block diagram highlighting isolated sensor buses and redundant cellular storm failover.",
+        "context": null
+      },
+      {
+        "file": "fig_p2_1.png",
+        "page": 2,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.127,
+          0.512,
+          0.484,
+          0.7
+        ],
+        "width_px": 551,
+        "height_px": 416,
+        "caption": "Figure 3: Field commissioning of an S400-Mesh solar mast mounted along an urban flood detention channel using an extended horizontal ultrasonic stage arm.",
+        "context": null
+      }
+    ]
+  },
+  "stdout_manifest": {
+    "pdf": "product_datasheet_grid.pdf",
+    "dpi": 180,
+    "total_pages": 2,
+    "scanned_pages": [],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.44,
+          0.329,
+          0.875,
+          0.558
+        ],
+        "width_px": 668,
+        "height_px": 503,
+        "caption": "Figure 1: Production S400-Pro telemetry enclosure displaying anodized aluminum corner rails, stainless U-bolt clamp, sealed diagnostic port, and shielded hydrophobic...",
+        "context": null
+      },
+      {
+        "file": "fig_p1_2.png",
+        "page": 1,
+        "source": "vector",
+        "drawings": 15,
+        "placement": "figure",
+        "box": [
+          0.391,
+          0.694,
+          0.923,
+          0.81
+        ],
+        "width_px": 813,
+        "height_px": 266,
+        "caption": "Figure 2: Hardware power and telemetry block diagram highlighting isolated sensor buses and redundant cellular storm failover.",
+        "context": null
+      },
+      {
+        "file": "fig_p2_1.png",
+        "page": 2,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.127,
+          0.512,
+          0.484,
+          0.7
+        ],
+        "width_px": 551,
+        "height_px": 416,
+        "caption": "Figure 3: Field commissioning of an S400-Mesh solar mast mounted along an urban flood detention channel using an extended horizontal...",
+        "context": null
+      }
+    ]
+  },
+  "png_sha256": {
+    "fig_p1_1.png": "b4fd771cbed99ccfcaeb60e952366b5c97e5e0202985d5425a10498c6b638ba9",
+    "fig_p1_2.png": "a7945f9e6f02e2b636a163d0426a8b3dc584ca6e011f8f49fb849d96d27eaecf",
+    "fig_p2_1.png": "e579d1a6e357415b945f3e68f4b6bcf94eb09a2c33b5e949bd614a190a9a5c39"
+  }
+}

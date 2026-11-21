@@ -1,0 +1,300 @@
+{
+  "manifest": {
+    "pdf": "synthetic_urban_benchmark.pdf",
+    "dpi": 180,
+    "total_pages": 6,
+    "scanned_pages": [],
+    "figures": [
+      {
+        "file": "fig_p2_1.png",
+        "page": 2,
+        "source": "vector",
+        "drawings": 20,
+        "placement": "figure",
+        "box": [
+          0.092,
+          0.208,
+          0.909,
+          0.41
+        ],
+        "width_px": 1237,
+        "height_px": 445,
+        "caption": "Figure 1: End-to-end urban scene parsing pipeline integrating multi-scale exposure checking, spatial denoising, motion vector masking, and dual-branch graph serialization across ten connected processing stages.",
+        "context": null
+      },
+      {
+        "file": "fig_p2_2.png",
+        "page": 2,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.067,
+          0.472,
+          0.934,
+          0.686
+        ],
+        "width_px": 1311,
+        "height_px": 472,
+        "caption": "Figure 2: Dynamic street scene comparison under contrasting lighting regimes: (a) sharp oblique pedestrian and pet shadows projected onto interlocking tiles; (b) slow-shutter vehicular motion streaks adjacent to a stationary roadside vendor.",
+        "context": null
+      },
+      {
+        "file": "fig_p4_1.png",
+        "page": 4,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.188,
+          0.127,
+          0.813,
+          0.421
+        ],
+        "width_px": 951,
+        "height_px": 639,
+        "caption": "Figure 3: Low-contrast outdoor chalkboard sample featuring handwritten Vietnamese chalk lettering (\"TO DAN PHO 13 - THONG BAO\") across horizontal ruling lines.",
+        "context": null
+      },
+      {
+        "file": "fig_p4_2.png",
+        "page": 4,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.074,
+          0.672,
+          0.2,
+          0.73
+        ],
+        "width_px": 209,
+        "height_px": 145,
+        "caption": null,
+        "context": "Botanical Foreground | High-saturation pink petals over soft bokeh foliage"
+      },
+      {
+        "file": "fig_p4_3.png",
+        "page": 4,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.074,
+          0.743,
+          0.2,
+          0.803
+        ],
+        "width_px": 209,
+        "height_px": 147,
+        "caption": null,
+        "context": "Facade Geometry | Periodic arched-dome and rectangular window grid"
+      },
+      {
+        "file": "fig_p5_1.png",
+        "page": 5,
+        "source": "vector",
+        "drawings": 12,
+        "placement": "figure",
+        "box": [
+          0.167,
+          0.149,
+          0.767,
+          0.322
+        ],
+        "width_px": 913,
+        "height_px": 385,
+        "caption": "Figure 4: Per-category segmentation recall (%) and relative latency trend across five urban scene classes evaluated in the synthetic test suite.",
+        "context": null
+      },
+      {
+        "file": "fig_p5_2.png",
+        "page": 5,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.266,
+          0.429,
+          0.735,
+          0.649
+        ],
+        "width_px": 719,
+        "height_px": 484,
+        "caption": "Fig. S1: Supplementary neoclassical architectural facade test frame showing repetitive window grid alignment under upward perspective tilt.",
+        "context": null
+      },
+      {
+        "file": "fig_p5_3.png",
+        "page": 5,
+        "source": "vector",
+        "drawings": 6,
+        "placement": "figure",
+        "box": [
+          0.203,
+          0.698,
+          0.796,
+          0.813
+        ],
+        "width_px": 904,
+        "height_px": 264,
+        "caption": "Fig. S2: Supplementary homography rectification diagram mapping tilted quadrilateral windows into orthogonal lattice coordinates.",
+        "context": null
+      }
+    ]
+  },
+  "stdout_manifest": {
+    "pdf": "synthetic_urban_benchmark.pdf",
+    "dpi": 180,
+    "total_pages": 6,
+    "scanned_pages": [],
+    "figures": [
+      {
+        "file": "fig_p2_1.png",
+        "page": 2,
+        "source": "vector",
+        "drawings": 20,
+        "placement": "figure",
+        "box": [
+          0.092,
+          0.208,
+          0.909,
+          0.41
+        ],
+        "width_px": 1237,
+        "height_px": 445,
+        "caption": "Figure 1: End-to-end urban scene parsing pipeline integrating multi-scale exposure checking, spatial denoising, motion vector masking, and dual-branch graph serialization...",
+        "context": null
+      },
+      {
+        "file": "fig_p2_2.png",
+        "page": 2,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.067,
+          0.472,
+          0.934,
+          0.686
+        ],
+        "width_px": 1311,
+        "height_px": 472,
+        "caption": "Figure 2: Dynamic street scene comparison under contrasting lighting regimes: (a) sharp oblique pedestrian and pet shadows projected onto interlocking...",
+        "context": null
+      },
+      {
+        "file": "fig_p4_1.png",
+        "page": 4,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.188,
+          0.127,
+          0.813,
+          0.421
+        ],
+        "width_px": 951,
+        "height_px": 639,
+        "caption": "Figure 3: Low-contrast outdoor chalkboard sample featuring handwritten Vietnamese chalk lettering (\"TO DAN PHO 13 - THONG BAO\") across horizontal...",
+        "context": null
+      },
+      {
+        "file": "fig_p4_2.png",
+        "page": 4,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.074,
+          0.672,
+          0.2,
+          0.73
+        ],
+        "width_px": 209,
+        "height_px": 145,
+        "caption": null,
+        "context": "Botanical Foreground | High-saturation pink petals over soft bokeh foliage"
+      },
+      {
+        "file": "fig_p4_3.png",
+        "page": 4,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "table_cell",
+        "box": [
+          0.074,
+          0.743,
+          0.2,
+          0.803
+        ],
+        "width_px": 209,
+        "height_px": 147,
+        "caption": null,
+        "context": "Facade Geometry | Periodic arched-dome and rectangular window grid"
+      },
+      {
+        "file": "fig_p5_1.png",
+        "page": 5,
+        "source": "vector",
+        "drawings": 12,
+        "placement": "figure",
+        "box": [
+          0.167,
+          0.149,
+          0.767,
+          0.322
+        ],
+        "width_px": 913,
+        "height_px": 385,
+        "caption": "Figure 4: Per-category segmentation recall (%) and relative latency trend across five urban scene classes evaluated in the synthetic test...",
+        "context": null
+      },
+      {
+        "file": "fig_p5_2.png",
+        "page": 5,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.266,
+          0.429,
+          0.735,
+          0.649
+        ],
+        "width_px": 719,
+        "height_px": 484,
+        "caption": "Fig. S1: Supplementary neoclassical architectural facade test frame showing repetitive window grid alignment under upward perspective tilt.",
+        "context": null
+      },
+      {
+        "file": "fig_p5_3.png",
+        "page": 5,
+        "source": "vector",
+        "drawings": 6,
+        "placement": "figure",
+        "box": [
+          0.203,
+          0.698,
+          0.796,
+          0.813
+        ],
+        "width_px": 904,
+        "height_px": 264,
+        "caption": "Fig. S2: Supplementary homography rectification diagram mapping tilted quadrilateral windows into orthogonal lattice coordinates.",
+        "context": null
+      }
+    ]
+  },
+  "png_sha256": {
+    "fig_p2_1.png": "31ee01bc526582ff890c504d5aec40d0a0750fed5457288a51b537fcadb52daf",
+    "fig_p2_2.png": "92afd23ce97e933262c049273983550823c6da16164fd115bc3299988a560aae",
+    "fig_p4_1.png": "86c3a5db6f5f3dc2f14eed7d5ac525be28a7e683c15a1232d2d2bd66b6f59d1a",
+    "fig_p4_2.png": "a9a18022e52b36cbdefe3e38c306176e95da7abb824cf211d8523dcdad7934dd",
+    "fig_p4_3.png": "0d412c8685567c0303f3049106b29f93f61a8ff48ffa53531077306b88112610",
+    "fig_p5_1.png": "010584736d6c107a8ded5967998c61ddcb42a556f7954ef9a7af59eb1f2c2950",
+    "fig_p5_2.png": "f56e0fb56e7f655575b3b4cec2c0063f396c7cbfcd5b5de8e3958d386325e655",
+    "fig_p5_3.png": "2f2eed8bb0d298b29460cc1b8549bee5e74450eae266bc3cb378f7ee764a8ac1"
+  }
+}

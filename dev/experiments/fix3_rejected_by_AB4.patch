@@ -1,0 +1,239 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 1f24a8f..0b6d9c9 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -6,11 +6,12 @@ Tất cả những thay đổi đáng chú ý của dự án **Luka-Loop** sẽ
+ ### Added
+ - `dev/eval_doclaynet.py`: công cụ phát triển đánh giá bộ tách hình trên DocLayNet v1.2 (phần `scientific_articles`, dùng PDF gốc nhúng trong parquet). Chia train thành `tune` và `holdout` (~20% tài liệu, hash cố định, cấm xem ảnh chồng), chạy song song, lưu đệm kết quả theo dấu vân tay mã bộ phát hiện, báo precision/recall/F1 (IoU ≥ 0,5 và tiêu chí nới), IoU trung bình, phân loại từng lỗi (`missed`/`split`/`merged`/`fragment`/`fp_<lớp>`…), độ chính xác theo nguồn hình, hỗ trợ tắt từng quy tắc để đo đóng góp và xuất ảnh chồng các trang tệ nhất. Thêm `tests/test_eval_doclaynet.py` (logic chấm điểm, chỉ dùng thư viện chuẩn) và hướng dẫn trong `dev/DEVELOPMENT.md`.
+ - `dev/eval_doclaynet.py`: chỉ số theo **mức độ nghiêm trọng với bản dịch**, không phụ thuộc cách gộp/tách panel — hình bị cắt thiếu (chữ thuộc hình như nhãn trục/chú giải nằm ngoài mọi ảnh, dựa trên `pdf_cells`), bỏ sót, ảnh lấn chữ (chú thích/văn bản/công thức/bảng/số trang lọt vào ảnh, xét cả lề 4 pt khi xuất) và gộp lệch; chỉ số khớp theo quy ước DocLayNet giữ làm tham khảo. Nhãn được lưu đệm riêng và việc chấm điểm luôn tính lại, nên đổi cách chấm không phải chạy lại bộ phát hiện. Thêm `--gallery N` xuất trang HTML cục bộ với ví dụ cho từng loại lỗi nặng, kèm ảnh xuất ra thực tế. Chữ bị cắt chỉ được tính khi render thấy mực thật nằm ngoài ảnh (loại báo động giả từ `pdf_cells` nằm trên chữ ẩn); hình cắt thiếu chia mức `major` (≥ 3 ô chữ hoặc cắt diện tích) và `minor` (1–2 ô chữ, không tính là lỗi nặng).
+-- `tests/test_detector_fixes.py`: test hồi quy (PDF tổng hợp) cho hai bản sửa bên dưới, kể cả trường hợp giải mã ảnh nhúng lỗi (mặt nạ khác kích thước, ảnh đã có kênh alpha) phải lặng lẽ giữ khung gốc thay vì làm hỏng cả lần tách hình.
++- `tests/test_detector_fixes.py`: test hồi quy (PDF tổng hợp) cho các bản sửa bên dưới (cả nhãn của hình bên cạnh, cột phương trình, tiêu đề chạy dưới dải lề 10%), kể cả trường hợp giải mã ảnh nhúng lỗi (mặt nạ khác kích thước, ảnh đã có kênh alpha) phải lặng lẽ giữ khung gốc thay vì làm hỏng cả lần tách hình.
+ 
+ ### Fixed
+ - **Ảnh tách ra lấy cả viền trắng của ảnh nhúng** (đè lên số trang, đoạn văn, chú thích bên cạnh): Pha 2 nay cắt ảnh raster theo vùng mực thật — phân tích điểm ảnh của chính ảnh nhúng (kèm mặt nạ trong suốt) rồi quy đổi qua ma trận đặt ảnh, nên đúng cả với ảnh xoay/lật. Chạy sau các kiểm tra "ảnh nền cả trang" (trang quét có lề trắng vẫn được nhận là nền) và gom lại nhãn ngắn in đè trên phần viền vừa cắt (nhãn trục, chữ panel).
+ - **Cắt mất nhãn trục / tiêu đề trục / chú giải**: thêm bước gom nhãn theo **dòng chữ** sau bước gom theo khối hiện có — nhận dòng nằm sát trái (≤ 28 pt), phải (≤ 20), trên (≤ 18), dưới (≤ 26) hoặc chồng lên mép hình; không bao giờ gom chú thích, dòng của đoạn văn/công thức/bảng (cả khối chữ phải "giống nhãn"), tiêu đề mục, dòng chữ lớn phía trên hình, lề trên/dưới trang, hay thứ làm ảnh chạm sang hình khác. Các ngưỡng nằm trong `DetectorConfig` (`label_gap_*`, `label_max_growth`, `raster_trim_*`).
++- Bước gom nhãn theo dòng không còn kéo vào ảnh (các lỗi tìm thấy qua 150 hình chấm mù trái/phải): **nhãn của hình bên cạnh hoặc cột phương trình** — khi nới sang trái/phải, bỏ qua dòng nằm gần một đồ họa khác (trục, khung, ảnh) hơn là gần hình đang xét; nét vẽ chạm vào chữ (gạch chéo, gạch phân số) được coi là một phần ký hiệu, không phải đồ họa riêng; **mảnh phương trình** (dòng bắt đầu bằng "=", "+", "−"…, ngoặc lớn TeX ghép từ ký tự) và các dòng cùng hàng với chúng; **tiêu đề chạy / chân trang** — dòng chữ đầu tiên/cuối cùng của trang (khi rộng ≥ 30 pt) bất kể lề trang. Sửa luôn lỗi các đường thẳng (trục) có hộp bao rỗng nên không được tính là đồ họa.
+ - Đo trên DocLayNet (bài báo khoa học, chỉ số mức độ nghiêm trọng): tỉ lệ hình tách gọn tune 78,8% → 86,7%, holdout 77,9% → 83,1%, val 80,2% → 88,1%, test 80,5% → 86,9%; hình bị cắt thiếu nhiều giảm 25–54%; trang có lỗi nặng tune 664 → 505, holdout 181 → 138. Ảnh lấn chữ còn tăng nhẹ trên tune (156 → 168, chủ yếu `Page-header`) và test (19 → 24, chủ yếu `Formula`) — cần xử lý tiếp. Tốc độ tách hình chậm hơn khoảng 35% do tìm bảng khi gom nhãn. Golden của `journal_2col_academic` (ảnh gọn hơn) và `synthetic_urban_benchmark` (có thêm tiêu đề trục Y) được sinh lại sau khi đối chiếu bằng mắt.
+ 
+ ## [1.1.13] - 2026-11-21
+diff --git a/tests/test_detector_fixes.py b/tests/test_detector_fixes.py
+index 585a4a7..cf4d687 100644
+--- a/tests/test_detector_fixes.py
++++ b/tests/test_detector_fixes.py
+@@ -120,5 +120,61 @@ class TestAxisLabelLineAttachment(unittest.TestCase):
+         self.assertGreater(box.y0, 180, f"heading / sentence tail above the plot must not be attached: {box}")
+ 
+ 
++def _draw_plot(page: pymupdf.Page, frame: pymupdf.Rect) -> None:
++    shape = page.new_shape()
++    shape.draw_rect(frame)
++    step = frame.width / 20
++    shape.draw_polyline([pymupdf.Point(frame.x0 + i * step, frame.y1 - 10 - (i * i) % (frame.height - 20)) for i in range(21)])
++    for i in range(12):
++        shape.draw_circle(pymupdf.Point(frame.x0 + 15 + i * (frame.width - 30) / 11, frame.y0 + 30 + (i % 4) * 25), 3)
++    shape.finish(color=(0, 0, 0), width=0.8)
++    shape.commit()
++
++
++class TestLabelAttachmentGuards(unittest.TestCase):
++    """Cases from the blind A/B rounds where line-level attachment grabbed text that is not the figure's."""
++
++    def test_label_closer_to_a_neighbouring_graphic_is_not_taken(self) -> None:
++        doc = pymupdf.open()
++        page = doc.new_page(width=612, height=792)
++        _paragraph(page, 90, 3)
++        # another plot's bare axes (an L shape: too trivial to be detected as a figure on its own)
++        page.draw_line(pymupdf.Point(60, 200), pymupdf.Point(60, 380), color=(0, 0, 0), width=0.8)
++        page.draw_line(pymupdf.Point(60, 362), pymupdf.Point(250, 362), color=(0, 0, 0), width=0.8)
++        page.insert_text((252, 374), "10", fontsize=8)  # the neighbour's last x tick value, just under its axis
++        _draw_plot(page, pymupdf.Rect(285, 200, 520, 380))
++        page.insert_text((285, 420), "Figure 3: Decay of the signal.", fontsize=BODY)
++        _paragraph(page, 450, 5)
++        boxes = [r for r in fd.collect_page_figures(page)[0] if r.x1 > 400]
++        self.assertTrue(boxes)
++        self.assertGreater(boxes[0].x0, 263, f"the neighbour's tick value must not be pulled in: {boxes[0]}")
++
++    def test_running_header_below_the_top_band_is_not_attached(self) -> None:
++        doc = pymupdf.open()
++        page = doc.new_page(width=612, height=792)
++        page.insert_text((170, 104), "CHAPTER 1.  FLUORESCENT SILICON CLUSTERS", fontsize=BODY)  # 13% from the top
++        _draw_plot(page, pymupdf.Rect(170, 118, 470, 330))
++        page.insert_text((72, 365), "Figure 1.2: Schematic of the band structure in both materials.", fontsize=BODY)
++        _paragraph(page, 395, 6)
++        box = fd.collect_page_figures(page)[0][0]
++        self.assertGreater(box.y0, 106, f"the running header (first text line of the page) must stay out: {box}")
++
++    def test_display_equation_beside_the_figure_is_not_attached(self) -> None:
++        doc = pymupdf.open()
++        page = doc.new_page(width=612, height=792)
++        _paragraph(page, 90, 3)
++        _draw_plot(page, pymupdf.Rect(72, 150, 320, 330))
++        # numerator / denominator / right-hand side of three equations, 18 pt right of the plot frame
++        # (beyond the block-level 16 pt reach, within the line-level 20 pt reach)
++        for i, y in enumerate((180, 230, 280)):
++            page.insert_text((338, y - 6), f"dQ{i}", fontsize=9)
++            page.insert_text((340, y + 6), "dt", fontsize=9)
++            page.insert_text((366, y), "= -M w p(t)", fontsize=9)
++        page.insert_text((72, 365), "Figure 2: Evolution of the moments for the three trajectories.", fontsize=BODY)
++        _paragraph(page, 395, 6)
++        box = fd.collect_page_figures(page)[0][0]
++        self.assertLess(box.x1, 337, f"the equation column must stay outside the image: {box}")
++
++
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tools/src/figure_detector/pipeline.py b/tools/src/figure_detector/pipeline.py
+index 69c0662..c836e39 100644
+--- a/tools/src/figure_detector/pipeline.py
++++ b/tools/src/figure_detector/pipeline.py
+@@ -10,6 +10,7 @@ from .captions import (
+ )
+ from .geometry import (
+     _is_frame_for,
++    _is_page_background,
+     _merge_touching,
+     _rect_center_inside,
+     _rect_gap,
+@@ -175,6 +176,19 @@ def _expand_plot_axis_labels(candidates: list[CandidateBox], ctx: PageContext) -
+ 
+ 
+ _EQUATION_NUMBER_RE = re.compile(r"^\(\d+(?:\.\d+)*[a-z]?\)$")
++_RELATION_TOKENS = frozenset({"=", "+", "−", "-", "×", "·", "≈", "∝", "≡", "≃", "∼", "<", ">", "≤", "≥", "→"})
++
++
++def _is_equation_fragment(ws: list[str]) -> bool:
++    """A display-equation piece: a relation/operator starting the line ("= -Mw^2 p(t)"), or brace/bracket
++    extension glyphs (TeX big delimiters come out as private-use or U+23A7-23AD characters)."""
++    if ws and ws[0] in _RELATION_TOKENS:
++        return True
++    chars = [ch for w in ws for ch in w]
++    if not chars:
++        return False
++    pieces = sum(1 for ch in chars if "" <= ch <= "" or "⎛" <= ch <= "⎳")
++    return pieces >= 0.5 * len(chars)
+ 
+ 
+ def _label_lines(ctx: PageContext) -> list[tuple[pymupdf.Rect, bool]]:
+@@ -200,6 +214,8 @@ def _label_lines(ctx: PageContext) -> list[tuple[pymupdf.Rect, bool]]:
+             return False  # the tail of a sentence
+         if ws[-1].endswith("-") and len(ws[-1]) > 1:
+             return False  # a hyphenated line break inside running text
++        if _is_equation_fragment(ws):
++            return False
+         return not _EQUATION_NUMBER_RE.match(ws[-1])  # a display equation: "... (12)"
+ 
+     owners: dict[tuple[int, int], int] = {}
+@@ -214,6 +230,8 @@ def _label_lines(ctx: PageContext) -> list[tuple[pymupdf.Rect, bool]]:
+ 
+     # Lines continuing a caption or prose line on the same baseline (split off by sub/superscripts or inline math)
+     anchors = [tb.rect for i, tb in enumerate(ctx.text_blocks) if tb.kind != "text" or not block_ok.get(i, True)]
++    # Numerators, denominators and neighbouring symbols of a display equation share its rows only partly
++    equation_bits = [r for key, r in lines.items() if _is_equation_fragment(words[key])]
+     out = []
+     for key, r in lines.items():
+         owner = owners[key]
+@@ -227,12 +245,19 @@ def _label_lines(ctx: PageContext) -> list[tuple[pymupdf.Rect, bool]]:
+             for a in anchors
+         ):
+             continue
++        if any(
++            e != r and min(e.y1, r.y1) - max(e.y0, r.y0) >= 0.3 * r.height and max(e.x0 - r.x1, r.x0 - e.x1) <= 30.0
++            for e in equation_bits
++        ):
++            continue
+         thickness = r.width if r.height > 1.5 * r.width else r.height  # vertical lines: rotated axis titles
+         out.append((r, bool(body) and thickness > 1.15 * body))
+     return out
+ 
+ 
+-def _attach_adjacent_label_lines(candidates: list[CandidateBox], ctx: PageContext, cfg: DetectorConfig) -> None:
++def _attach_adjacent_label_lines(
++    candidates: list[CandidateBox], ctx: PageContext, cfg: DetectorConfig, raster_rects: list[pymupdf.Rect]
++) -> None:
+     """Grow figure boxes line by line to take in adjacent axis titles, tick values and legends.
+ 
+     Complements `_expand_plot_axis_labels`, which works on whole text blocks: a block can join the tick values of
+@@ -249,6 +274,19 @@ def _attach_adjacent_label_lines(candidates: list[CandidateBox], ctx: PageContex
+         if tb.kind == "text" and tb.word_count >= 12 and not _is_short_axis_label(tb, vertical_ok=True)
+     ]
+     gaps = (cfg.label_gap_left, cfg.label_gap_right, cfg.label_gap_top, cfg.label_gap_bottom)
++    # The first / last text line of the page is a running header / footer whatever the page margins are.
++    page_text_top = min((wr.y0 for wr in ctx.word_rects), default=ctx.page_rect.y0)
++    page_text_bottom = max((wr.y1 for wr in ctx.word_rects), default=ctx.page_rect.y1)
++    # Other graphics on the page: a label sitting closer to one of them than to this figure belongs to it
++    # (the tick values of a neighbouring plot, the fraction bars and braces of a display equation).
++    # (+0.5 pt: axis lines have a zero-height/width rect, which PyMuPDF treats as empty and never intersecting).
++    # Strokes touching any word are parts of a symbol (slash, fraction bar, overline), not separate graphics.
++    word_touch = [wr + (-1, -1, 1, 1) for wr in ctx.word_rects]
++    graphics = [
++        dr["rect"] + (-0.5, -0.5, 0.5, 0.5)
++        for dr in ctx.drawings
++        if max(dr["rect"].width, dr["rect"].height) >= 12.0 and not _is_page_background(dr["rect"], ctx.pw, ctx.ph, cfg)
++    ]
+     table_cache: list[list[pymupdf.Rect]] = []
+ 
+     def tables() -> list[pymupdf.Rect]:
+@@ -262,29 +300,47 @@ def _attach_adjacent_label_lines(candidates: list[CandidateBox], ctx: PageContex
+         orig = pymupdf.Rect(cand.rect)
+         cur = pymupdf.Rect(cand.rect)
+         others = [c.rect for j, c in enumerate(candidates) if j != idx]
++        reach = max(gaps) + cfg.label_max_growth
++        zone = orig + (-reach, -reach, reach, reach)
++        zone_words = [w for w in word_touch if w.intersects(zone)]
++        nearby = [
++            g for g in graphics
++            if g.intersects(zone) and not g.intersects(orig) and not any(g.intersects(w) for w in zone_words)
++        ] + [r for r in raster_rects if r.intersects(zone) and not r.intersects(orig)]
+         for _ in range(8):
+             changed = False
+             for lr, large in lines:
+                 if cur.contains(lr):
+                     continue
++                wide = lr.width >= 30.0  # a running header / footer line, unlike a lone tick value at the page top
+                 ho = max(0.0, min(cur.x1, lr.x1) - max(cur.x0, lr.x0))
+                 vo = max(0.0, min(cur.y1, lr.y1) - max(cur.y0, lr.y0))
+                 inter = (cur & lr).get_area()
+-                if inter >= 0.3 * max(1e-6, lr.get_area()):
+-                    ok = True  # straddles the box edge
++                straddles = inter >= 0.3 * max(1e-6, lr.get_area())
++                sideways = False
++                if straddles:
++                    ok = True
+                 elif lr.x1 <= cur.x0 + 3 and vo >= 0.5 * lr.height:
+-                    ok = cur.x0 - lr.x1 <= gaps[0]
++                    ok, sideways = cur.x0 - lr.x1 <= gaps[0], True
+                 elif lr.x0 >= cur.x1 - 3 and vo >= 0.5 * lr.height:
+-                    ok = lr.x0 - cur.x1 <= gaps[1]
++                    ok, sideways = lr.x0 - cur.x1 <= gaps[1], True
+                 elif lr.y1 <= cur.y0 + 3 and ho >= 0.5 * lr.width:
+-                    # above the figure, a line set larger than the body text is a heading, not a panel title
+-                    ok = not large and cur.y0 - lr.y1 <= gaps[2]
++                    # above the figure: never the page's first text line (running header) nor a line set larger
++                    # than the body text (a heading, not a panel title)
++                    ok = not large and not (wide and lr.y0 <= page_text_top + 1.0) and cur.y0 - lr.y1 <= gaps[2]
+                 elif lr.y0 >= cur.y1 - 3 and ho >= 0.5 * lr.width:
+-                    ok = lr.y0 - cur.y1 <= gaps[3]
++                    ok = not (wide and lr.y1 >= page_text_bottom - 1.0) and lr.y0 - cur.y1 <= gaps[3]
+                 else:
+                     ok = False
+                 if not ok:
+                     continue
++                if sideways:  # neighbouring plots and equation columns sit beside a figure, not above/below it
++                    own = _rect_gap(lr, cur)
++                    touch = lr + (-1, -1, 1, 1)  # strokes touching the line are part of it (fraction bar, slash)
++                    if any(
++                        _rect_gap(lr, g) + 0.5 < own for g in nearby if not g.intersects(cur) and not g.intersects(touch)
++                    ):
++                        continue  # closer to another graphic: its label, not ours
+                 expanded = cur | lr
+                 g = cfg.label_max_growth
+                 if (orig.x0 - expanded.x0 > g or expanded.x1 - orig.x1 > g
+@@ -347,7 +403,7 @@ def _run_page_pipeline(
+         candidates = merge_candidates(ctx, candidates, cfg=cfg)
+         _annotate_candidate_origins(candidates, raster_rects, filtered_rects)
+         _expand_plot_axis_labels(candidates, ctx)
+-    _attach_adjacent_label_lines(candidates, ctx, cfg)
++    _attach_adjacent_label_lines(candidates, ctx, cfg, raster_rects)
+     min_uncap_vec_dim = cfg.min_vector_dim * max(1.0, min(ctx.pw, ctx.ph) / 792.0)
+     candidates = [
+         c

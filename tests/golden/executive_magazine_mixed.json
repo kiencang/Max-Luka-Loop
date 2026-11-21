@@ -1,0 +1,94 @@
+{
+  "manifest": {
+    "pdf": "executive_magazine_mixed.pdf",
+    "dpi": 180,
+    "total_pages": 3,
+    "scanned_pages": [
+      3
+    ],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.176,
+          0.187,
+          0.824,
+          0.443
+        ],
+        "width_px": 985,
+        "height_px": 559,
+        "caption": "Figure 1: Restored east-bank residential corridor combining permeable limestone walkways, multi-story irrigated roof gardens, and continuous plane-tree shading along the municipal embankment.",
+        "context": null
+      },
+      {
+        "file": "fig_p2_1.png",
+        "page": 2,
+        "source": "vector",
+        "drawings": 10,
+        "placement": "figure",
+        "box": [
+          0.086,
+          0.359,
+          0.915,
+          0.456
+        ],
+        "width_px": 1254,
+        "height_px": 227,
+        "caption": "Figure 2: Closed-loop municipal retrofit workflow integrating pre-design infrared mapping with telemetry-triggered grate cleaning (see scanned field record on Page 3).",
+        "context": null
+      }
+    ]
+  },
+  "stdout_manifest": {
+    "pdf": "executive_magazine_mixed.pdf",
+    "dpi": 180,
+    "total_pages": 3,
+    "scanned_pages": [
+      3
+    ],
+    "figures": [
+      {
+        "file": "fig_p1_1.png",
+        "page": 1,
+        "source": "raster",
+        "drawings": 0,
+        "placement": "figure",
+        "box": [
+          0.176,
+          0.187,
+          0.824,
+          0.443
+        ],
+        "width_px": 985,
+        "height_px": 559,
+        "caption": "Figure 1: Restored east-bank residential corridor combining permeable limestone walkways, multi-story irrigated roof gardens, and continuous plane-tree shading along the...",
+        "context": null
+      },
+      {
+        "file": "fig_p2_1.png",
+        "page": 2,
+        "source": "vector",
+        "drawings": 10,
+        "placement": "figure",
+        "box": [
+          0.086,
+          0.359,
+          0.915,
+          0.456
+        ],
+        "width_px": 1254,
+        "height_px": 227,
+        "caption": "Figure 2: Closed-loop municipal retrofit workflow integrating pre-design infrared mapping with telemetry-triggered grate cleaning (see scanned field record on Page...",
+        "context": null
+      }
+    ]
+  },
+  "png_sha256": {
+    "fig_p1_1.png": "068a0320070016f0522389e56b33ba325abc7a192db8f5d7f4d550ed91236288",
+    "fig_p2_1.png": "43d0913e19a396333055d34efcecd55d830ef7d1dd961742f48762f457f9551e"
+  }
+}

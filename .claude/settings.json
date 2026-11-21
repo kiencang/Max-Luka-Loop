@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\\extract_pdf_assets.ps1' *)",
+      "PowerShell(powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\\pdf_fallback_tools.ps1' *)",
+      "PowerShell(powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\\html_packager.ps1' *)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\\extract_pdf_assets.ps1' *)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\\pdf_fallback_tools.ps1' *)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\\html_packager.ps1' *)"
+    ]
+  }
+}
