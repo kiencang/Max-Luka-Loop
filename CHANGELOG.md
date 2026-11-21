@@ -2,8 +2,12 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.0.1] - 2026-11-22
+### Fixed
+- Lệnh ngay cho Calude dùng Render Pages để đọc các file PDF trên 10 trang (tránh việc tự tìm cách cài đặt các công cụ khác để xử lý);
+
 ## [1.0.0] - 2026-11-22
-Bản phát hành đầu tiên của **Max Luka Loop** (`max-luka-loop`), dựng lại từ mã nguồn [Luka-Loop](https://github.com/kiencang/Luka-Loop) v1.1.17 (giấy phép MIT). Lịch sử thay đổi trước đó xem tại dự án gốc.
+Bản phát hành đầu tiên của **Max Luka Loop** (`max-luka-loop`), dựng lại từ mã nguồn [Luka-Loop](https://github.com/kiencang/Luka-Loop) v1.1.17 (cùng tác giả). Lịch sử thay đổi trước đó xem tại dự án gốc.
 
 ### Added
 - Tách ảnh bằng mô hình bố cục **Egret Medium** (docling-layout-egret-medium, Apache-2.0) chạy qua ONNX trên CPU. Mô hình chỉ thay khâu tìm khung hình (Pha 2–5); khung được hậu xử lý đúng như `LayoutPostprocessor` của Docling (ngưỡng theo nhãn, bỏ hình phủ > 90% trang, gom khung chồng nhau, bảng thắng hình trùng khung). PyMuPDF vẫn render trang, đọc chữ để ghép chú thích và cắt PNG, nên `manifest.json` giữ nguyên định dạng (thêm trường `"detector": "egret"`). Trên DocLayNet test (943 trang khoa học): 11 trang có lỗi nặng, so với 44 của bộ quy tắc cũ. Điểm mạnh chính: cắt được hình trên trang scan, nơi bộ tìm hình cũ chỉ báo `scanned_pages` để agent cắt tay; trang đã cắt được hình không còn nằm trong `scanned_pages`.
