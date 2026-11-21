@@ -1,23 +1,21 @@
 name: CI
 
 on:
+  # Test-only and dev-tool changes (tests/**, dev/**) do not trigger CI on their own; release.yml re-runs the
+  # full suite before packaging, and "Run workflow" (workflow_dispatch) checks them on demand.
   push:
     branches: [main]
     paths:
       - 'tools/**'
-      - 'tests/**'
       - '.agents/**'
       - 'AGENTS.md'
-      - 'dev/egret/**'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'tools/**'
-      - 'tests/**'
       - '.agents/**'
       - 'AGENTS.md'
-      - 'dev/egret/**'
       - '.github/workflows/ci.yml'
   workflow_dispatch:
 

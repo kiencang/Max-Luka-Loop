@@ -40,7 +40,7 @@ pwsh -NoProfile -File .\tests\run_tests.ps1 # test PowerShell 7
 - Chạy nhanh riêng test Python: `$env:PYTHONUTF8='1'; python -m unittest discover -s tests -p "test_*.py"`.
 - Các tệp test chỉ cần thư viện chuẩn (không cần PyMuPDF/Edge): `test_skill_contracts.py`, `test_pdf_export_resilience.py`, `test_clean_dir_scope.py`, `test_cli.py`, `test_eval_doclaynet.py`, `test_ab_judge.py`.
 - Test chỉ ghi vào thư mục tạm của hệ thống, không ghi vào `work\` hay `output\` của dự án.
-- CI (`.github\workflows\ci.yml`) chạy khi đổi `tools/**`, `tests/**`, `.agents/**` hoặc `AGENTS.md`; quy trình phát hành (`release.yml`) chạy khi đẩy tag `v*`.
+- CI (`.github\workflows\ci.yml`) chạy khi đổi `tools/**`, `.agents/**`, `AGENTS.md` hoặc chính `ci.yml`. Chỉ sửa test (`tests/**`) hay công cụ phát triển (`dev/**`) thì không kích hoạt CI: hãy chạy test ở máy, hoặc bấm **Run workflow** trong tab Actions. Quy trình phát hành (`release.yml`) chạy khi đẩy tag `v*` và luôn chạy lại toàn bộ test trước khi đóng gói.
 
 ## Bộ tìm hình Egret (ONNX, mặc định)
 

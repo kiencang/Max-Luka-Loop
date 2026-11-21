@@ -1,7 +1,7 @@
 # Max Luka Loop
-Công cụ AI Agent tự động dịch tài liệu PDF từ tiếng Anh sang tiếng Việt. Không yêu cầu cài thêm bất cứ phần mềm hỗ trợ nào. Chỉ cần mở thư mục trên [Antigravity](https://antigravity.google/) là bắt đầu dùng được ngay.
+Công cụ AI Agent tự động dịch tài liệu PDF từ tiếng Anh sang tiếng Việt. Không yêu cầu cài thêm bất cứ phần mềm hỗ trợ nào. Chỉ cần mở thư mục trên [Antigravity](https://antigravity.google/), Claude Code là bắt đầu dùng được ngay.
 
-- Định dạng đầu vào: PDF, và nên là PDF tiêu chuẩn dưới 50 trang, với PDF scan ứng dụng vẫn dùng bình thường nhưng tốn thời gian hơn khá nhiều (nếu file scan nhiều ảnh chụp lồng bên trong, file tiêu chuẩn thì tách ảnh rất nhanh).
+- Định dạng đầu vào: PDF, nên dưới 50 trang. Hình ảnh, biểu đồ được tìm bằng mô hình bố cục Egret (chạy ngay trên CPU của máy), nên **cả PDF scan cũng được tự động cắt hình**; riêng phần chữ của bản scan vẫn tốn thời gian hơn vì AI phải đọc từ ảnh trang.
 - Định dạng đầu ra mặc định: Bản dịch tiếng Việt trả về ở cả 2 định dạng đồng thời là HTML và PDF. Định dạng HTML thường có kết quả hiển thị tốt hơn.
 
 ## Cách dùng
@@ -22,7 +22,7 @@ Dung lượng file: Nếu bạn tải file lên từ khung chat, giới hạn c�
 
 **Lưu ý**:
 - Khi làm việc với Antigravity, bạn có thể chọn chế độ **Turbo** (thay vì mặc định Request Review) để tránh phải xác nhận lặp lại các lệnh đóng gói; tuy nhiên **chỉ nên dùng Turbo với tài liệu PDF từ nguồn tin cậy** *(với PDF lạ, nên giữ Request Review để kiểm soát lệnh thực thi)*.
-- Nếu đặt thư mục `max-luka-loop` bên trong vùng đồng bộ đám mây (OneDrive, Google Drive, Dropbox...), hãy bật tùy chọn giữ tệp ngoại tuyến trên máy (*Always keep on this device* / *Mirror files* / *Available offline*) để `extract_assets.exe` nạp đủ các thư viện đi kèm và tránh lồng đường dẫn quá sâu vượt giới hạn ký tự trên Windows.
+- Nếu đặt thư mục `max-luka-loop` bên trong vùng đồng bộ đám mây (OneDrive, Google Drive, Dropbox...), hãy bật tùy chọn giữ tệp ngoại tuyến trên máy (*Always keep on this device* / *Mirror files* / *Available offline*) để `extract_assets.exe` nạp đủ các thư viện và mô hình đi kèm, và tránh lồng đường dẫn quá sâu vượt giới hạn ký tự trên Windows. Nếu mô hình không nạp được, bước tách ảnh sẽ dừng và báo lỗi thay vì cho ra kết quả kém.
 
 ## Dùng với Claude Code
 Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab Code trong ứng dụng Claude desktop, hoặc lệnh `claude` trong terminal) trên Windows:
@@ -35,12 +35,13 @@ Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab 
 ## Yêu cầu hệ thống
 - **Hệ điều hành:** Windows 10 hoặc Windows 11 **64-bit (x64)** *(bộ công cụ `extract_assets.exe` hiện biên dịch ở kiến trúc x64, chưa hỗ trợ Windows 32-bit), hầu hết các máy tính hiện nay trên thị trường đều là bản 64-bit*.
 - **PowerShell:** Hỗ trợ cả **Windows PowerShell 5.1** (có sẵn mặc định trên Windows 10/11) lẫn **PowerShell 7+** (`pwsh.exe`), không yêu cầu cấu hình thêm.
+- **Dung lượng & tốc độ:** Thư mục sau giải nén khoảng 220 MB (gồm Python portable, PyMuPDF, ONNX Runtime và mô hình Egret ~75 MB). Tách ảnh mất khoảng 1 giây/trang trên CPU laptop phổ thông; không cần GPU.
 - **Trình duyệt (tùy chọn để tự động xuất PDF):** Công cụ dùng Microsoft Edge (ưu tiên) hoặc Google Chrome để xuất tệp PDF. Nếu không có, quy trình vẫn xuất hoàn chỉnh tệp `*_vi.html`.
 
 ## Lý do tồn tại
 Tôi đã có sản phẩm https://github.com/kiencang/PDF-silaTranslator có chức năng tương đương, nhưng hiện tại chỉ API Key trả phí mới sử dụng được. 
 
-Max Luka Loop sử dụng agent Gemini thông qua Antigravity, và hoàn toàn dùng được với tài khoản miễn phí. Ngoài ra, việc sử dụng các thư viện python chất lượng cao như PyMuPDF giúp công cụ có sự cải tiến tốt hơn trong khả năng tách ảnh, khi bạn thử, bạn sẽ thấy đa số các file PDF nó có khả năng bảo toàn định dạng rất tốt.
+**Max Luka Loop và [Luka-Loop](https://github.com/kiencang/Luka-Loop):** Max Luka Loop được tách ra từ Luka-Loop (v1.1.17) để phát triển riêng. Khác biệt chính nằm ở khâu tách ảnh: Luka-Loop tìm hình bằng các quy tắc hình học, còn Max Luka Loop dùng mô hình bố cục **Egret Medium** của dự án [Docling](https://github.com/docling-project/docling) (IBM Research), nên cắt hình chính xác hơn và xử lý được cả PDF scan. Đổi lại, gói tải về nặng hơn (khoảng 220 MB so với khoảng 60 MB) và tách ảnh chậm hơn. Trên bộ kiểm thử DocLayNet (943 trang bài báo khoa học), số trang có lỗi tách hình nghiêm trọng giảm từ 44 xuống 11.
 
 ## Cấu trúc dự án
 - [`AGENTS.md`](./AGENTS.md) — Quy tắc điều phối dành cho AI Agent trong workspace.
@@ -50,12 +51,13 @@ Max Luka Loop sử dụng agent Gemini thông qua Antigravity, và hoàn toàn d
 - [`.agents/adapters/antigravity.md`](./.agents/adapters/antigravity.md) — Bộ chuyển đổi riêng cho Antigravity: gom mọi chi tiết phụ thuộc vào Antigravity (lấy PDF kéo-thả vào khung chat, tên tệp tạm, ánh xạ sang công cụ `read_file`...). `AGENTS.md` và các `SKILL.md` viết trung lập để có thể dùng với agent khác (Codex, Cursor...); khi Antigravity thay đổi cách vận hành, chỉ cần sửa tệp này.
 - [`tools/`](./tools/) — Bộ công cụ thực thi portable (`extract_assets.exe`) cùng các script PowerShell bọc CLI mỏng:
   - [`extract_pdf_assets.ps1`](./tools/extract_pdf_assets.ps1) gọi `tools/extract_assets/extract_assets.exe` để phân giải tệp PDF (qua `-PdfPath` hoặc `-TranscriptPath`), tách ảnh/sơ đồ, xuất `manifest.json` và thu gọn tóm tắt trên stdout. Khung hình được tìm bằng mô hình bố cục Egret Medium (ONNX, chạy trên CPU, cắt được cả hình trên trang scan) đóng gói sẵn trong `extract_assets`; nếu mô hình không chạy được, bước tách ảnh dừng ngay và báo lỗi.
-  - [`pdf_fallback_tools.ps1`](./tools/pdf_fallback_tools.ps1) gọi `tools/extract_assets/extract_assets.exe` (PyMuPDF) để render trang PDF scan và cắt khung ảnh theo JSON kèm auto-trim và kiểm tra giới hạn thư mục.
+  - [`pdf_fallback_tools.ps1`](./tools/pdf_fallback_tools.ps1) gọi `tools/extract_assets/extract_assets.exe` (PyMuPDF) để render trang PDF thành ảnh và cắt khung ảnh theo JSON kèm auto-trim và kiểm tra giới hạn thư mục — chỉ dùng khi AI thấy một hình bị tách sót hoặc cắt sai, hoặc khi agent không đọc trực tiếp được PDF.
   - [`html_packager.ps1`](./tools/html_packager.ps1) chuyển tiếp sang `tools/extract_assets/extract_assets.exe` để tối ưu & nhúng ảnh Base64 trong bộ nhớ (không tạo ảnh tạm trên đĩa), bơm lớp vỏ đọc [`reader_shell.html`](./tools/reader_shell.html) (hoặc bỏ qua khi bật `-PreserveLayout`), kiểm định Auto-QA, tự động đánh số chống ghi đè (`_2`, `_3`...), xuất PDF và dọn sạch `work/`.
   - [`_path_guards.ps1`](./tools/_path_guards.ps1) — Tiện ích PowerShell kiểm tra an toàn đường dẫn và gọi `extract_assets.exe` (kèm phát hiện tệp đám mây offline).
-  - [`src/`](./tools/src/) ([`extract_assets.py`](./tools/src/extract_assets.py), [`figure_detector/`](./tools/src/figure_detector/), [`image_ops.py`](./tools/src/image_ops.py), [`packager.py`](./tools/src/packager.py), [`reader_shell.py`](./tools/src/reader_shell.py), [`html_qa.py`](./tools/src/html_qa.py), [`pdf_export.py`](./tools/src/pdf_export.py), [`output_paths.py`](./tools/src/output_paths.py), [`transcript.py`](./tools/src/transcript.py), [`manifest.py`](./tools/src/manifest.py), [`path_guards.py`](./tools/src/path_guards.py)) & [`src/requirements-build.txt`](./tools/src/requirements-build.txt) — Mã nguồn Python gốc và danh sách gói ghim phiên bản dùng trên GitHub Actions (hoặc chạy [`build_extractor.ps1`](./tools/build_extractor.ps1) khi phát triển ở máy cá nhân) để biên dịch ra `extract_assets.exe` *(khi chạy dịch thuật, ứng dụng này tuyệt đối không gọi Python hệ thống)*.
+  - [`src/`](./tools/src/) ([`extract_assets.py`](./tools/src/extract_assets.py), [`figure_detector/`](./tools/src/figure_detector/), [`image_ops.py`](./tools/src/image_ops.py), [`packager.py`](./tools/src/packager.py), [`reader_shell.py`](./tools/src/reader_shell.py), [`html_qa.py`](./tools/src/html_qa.py), [`pdf_export.py`](./tools/src/pdf_export.py), [`output_paths.py`](./tools/src/output_paths.py), [`transcript.py`](./tools/src/transcript.py), [`manifest.py`](./tools/src/manifest.py), [`path_guards.py`](./tools/src/path_guards.py)) & [`src/requirements-build.txt`](./tools/src/requirements-build.txt) — Mã nguồn Python gốc và danh sách gói ghim phiên bản dùng trên GitHub Actions (hoặc chạy [`build_extractor.ps1`](./tools/build_extractor.ps1) khi phát triển ở máy cá nhân) để đóng gói ra `extract_assets.exe` *(khi chạy dịch thuật, ứng dụng này tuyệt đối không gọi Python hệ thống)*. Bộ tìm hình bằng mô hình Egret nằm ở [`figure_detector/egret.py`](./tools/src/figure_detector/egret.py) (hậu xử lý theo Docling); tệp mô hình ONNX không có trong mã nguồn mà được tải từ bản phát hành [`model-egret-medium-v1`](https://github.com/kiencang/Max-Luka-Loop/releases/tag/model-egret-medium-v1) và đóng gói sẵn trong `tools/extract_assets/`.
 - `input/` — Thư mục chứa tệp tin đầu vào, quan trọng khi file PDF hơn 10MB thì cần đặt vào đó, nếu không đến giới hạn ấy, người dùng có thể tải lên ngay từ khung chat mà không cần đặt vào thư mục input;
 - `output/` — Thư mục chứa tệp đầu ra (`*_vi.html`/`*_vi.pdf` cho bản đọc mượt mặc định; `*_layout_vi.html`/`*_layout_vi.pdf` cho bản bảo toàn thiết kế; tự động thêm `_2`, `_3`... nếu dịch lại nhiều lần cùng một file), tự động được tạo khi đóng gói và được bỏ qua bởi [`.gitignore`](./.gitignore).
+- [`dev/`](./dev/), [`tests/`](./tests/), [`.github/workflows/`](./.github/workflows/) — Chỉ dành cho phát triển, không có trong gói phát hành: hướng dẫn phát triển ([`dev/DEVELOPMENT.md`](./dev/DEVELOPMENT.md)), công cụ xuất/đánh giá mô hình Egret ([`dev/egret/`](./dev/egret/)) và đánh giá trên DocLayNet ([`dev/eval_doclaynet.py`](./dev/eval_doclaynet.py)), bộ kiểm thử Python/PowerShell, và hai workflow GitHub Actions (`ci.yml` chạy kiểm thử, `release.yml` đóng gói `max-luka-loop-win-x64.zip` khi đẩy tag `v*`).
 
 ## Tuyên bố từ chối trách nhiệm
 Công cụ này có thể được sử dụng cho mục đích nghiên cứu và học tập cá nhân.
@@ -73,5 +75,6 @@ Công cụ này có thể được sử dụng cho mục đích nghiên cứu v�
   - **Microsoft Visual C++ Runtime / Universal CRT:** Thuộc bản quyền của Microsoft Corporation.
   - **ONNX Runtime:** Cấp phép theo **MIT**. **NumPy** (kèm OpenBLAS): **BSD-3-Clause**.
   - **Mô hình bố cục docling-layout-egret-medium** (Docling Project, bản chuyển sang ONNX): Cấp phép theo **Apache-2.0**.
+  - **Thuật toán hậu xử lý bố cục của Docling** (port lại trong [`tools/src/figure_detector/egret.py`](./tools/src/figure_detector/egret.py)): Cấp phép theo **MIT**, © The Docling Contributors.
 
 Vui lòng xem đầy đủ thông báo bản quyền và toàn văn các giấy phép bên thứ ba tại [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) và thư mục [`licenses/`](./licenses/).

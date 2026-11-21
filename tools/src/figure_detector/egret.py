@@ -7,6 +7,10 @@ post-processing below reproduce `RTDetrImageProcessor` from transformers without
 
 PyMuPDF still renders the page, extracts text for caption linking (Phase 1 + `link_captions`), counts
 drawings/images for `source`, and crops the final PNGs (Phase 6) — only the box search is replaced.
+
+The picture post-processing (`_picture_rects` and its helpers, and the constants they use) is a port of
+`LayoutPostprocessor` from Docling (docling/utils/layout_postprocessor.py, docling-slim 2.151.1):
+    Copyright The Docling Contributors. Licensed under the MIT License; full text in licenses/docling-MIT.txt.
 """
 
 from __future__ import annotations

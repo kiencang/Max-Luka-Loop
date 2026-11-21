@@ -55,9 +55,11 @@ try {
     $workDir = Join-Path $stageRoot 'work'
     $specDir = Join-Path $stageRoot 'spec'
     # numpy and ctypes stay in: onnxruntime (Egret detector) needs both.
+    # yaml: PyInstaller picks PyYAML up from onnxruntime's optional tooling when it happens to be installed
+    # (e.g. a dev venv that also has transformers); the extractor never uses it, so builds match CI.
     $excludes = @(
         'PIL', 'tkinter', 'matplotlib', 'scipy', 'pandas', 'cv2', 'unittest',
-        'fontTools', 'lxml', 'setuptools', 'pkg_resources', 'torch', 'transformers',
+        'fontTools', 'lxml', 'setuptools', 'pkg_resources', 'torch', 'transformers', 'yaml',
         'multiprocessing', 'ssl', 'xml'
     )
     $srcDir = Join-Path $PSScriptRoot 'src'

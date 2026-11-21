@@ -16,6 +16,7 @@ Tuy nhiên, gói công cụ thực thi dựng sẵn dành cho Windows (`tools/ex
 | **ONNX Runtime 1.32.0** | `_internal/onnxruntime/capi/onnxruntime.dll`, `onnxruntime_pybind11_state.pyd` | Microsoft Corporation | **MIT** (kèm thông báo bên thứ ba) | [licenses/onnxruntime-LICENSE.txt](./licenses/onnxruntime-LICENSE.txt), [licenses/onnxruntime-ThirdPartyNotices.txt](./licenses/onnxruntime-ThirdPartyNotices.txt) |
 | **NumPy 2.5.5** (kèm OpenBLAS, thư viện GCC runtime) | `_internal/numpy/`, `_internal/numpy.libs/libscipy_openblas*.dll` | NumPy Developers; The OpenBLAS Project | **BSD-3-Clause** (OpenBLAS: BSD-3-Clause; GCC runtime: GPL-3.0 kèm GCC Runtime Library Exception) | [licenses/numpy-LICENSE.txt](./licenses/numpy-LICENSE.txt) |
 | **Mô hình docling-layout-egret-medium** (bản chuyển sang ONNX) | `_internal/models/egret_medium.onnx` | Docling Project ([Hugging Face](https://huggingface.co/docling-project/docling-layout-egret-medium)) | **Apache-2.0** | [licenses/Apache-2.0.txt](./licenses/Apache-2.0.txt) |
+| **Docling — thuật toán hậu xử lý bố cục** (mã port lại, nằm trong `extract_assets.exe` và [`tools/src/figure_detector/egret.py`](./tools/src/figure_detector/egret.py)) | `extract_assets.exe` (mã Python đã đóng gói) | The Docling Contributors | **MIT** | [licenses/docling-MIT.txt](./licenses/docling-MIT.txt) |
 
 ---
 
@@ -60,6 +61,14 @@ OpenSSL 3.0.15 (libcrypto-3.dll) is licensed under the Apache License, Version 2
 - Trọng số gốc do Docling Project phát hành tại <https://huggingface.co/docling-project/docling-layout-egret-medium> theo **Apache-2.0**.
 - **Thay đổi so với bản gốc** (theo điều 4(b) của Apache-2.0): trọng số được chuyển từ safetensors (PyTorch) sang ONNX bằng [`dev/egret/export_onnx.py`](./dev/egret/export_onnx.py), đầu vào cố định 1×3×640×640, position embedding của encoder được tính sẵn thành hằng float32. Trọng số không bị huấn luyện lại hay chỉnh sửa giá trị.
 - Toàn văn giấy phép xem tại [`licenses/Apache-2.0.txt`](./licenses/Apache-2.0.txt).
+
+### 9. Docling — thuật toán hậu xử lý bố cục (MIT License)
+```text
+Copyright The Docling Contributors
+Licensed under the MIT License.
+```
+- Phần chọn khung hình sau khi chạy mô hình Egret (`_picture_rects` và các hàm, hằng số liên quan trong [`tools/src/figure_detector/egret.py`](./tools/src/figure_detector/egret.py)) được port từ lớp `LayoutPostprocessor` trong `docling/utils/layout_postprocessor.py` của dự án [Docling](https://github.com/docling-project/docling) (gói `docling-slim` 2.151.1): ngưỡng tin cậy theo nhãn, loại hình phủ trên 90% trang, gom khung chồng nhau và chọn khung tốt nhất, ưu tiên bảng khi trùng khung với hình.
+- Toàn văn giấy phép xem tại [`licenses/docling-MIT.txt`](./licenses/docling-MIT.txt).
 
 ---
 
