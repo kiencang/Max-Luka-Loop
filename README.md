@@ -31,7 +31,7 @@ Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab 
 
 - Mở thư mục `max-luka-loop` trong Claude Code. Lần đầu mở, hãy chấp nhận hộp thoại tin cậy thư mục (workspace trust) để các quyền chạy sẵn trong [`.claude/settings.json`](./.claude/settings.json) có hiệu lực.
 - Gõ yêu cầu kèm đường dẫn tệp PDF, ví dụ `Dịch input/bao-cao.pdf sang tiếng Việt.` (hoặc thêm `và bảo toàn thiết kế/layout.`). Bạn cũng có thể gọi trực tiếp `/pdf-to-html-vi` hoặc `/pdf-to-html-vi-layout`.
-- Với PDF trên 10 trang, Claude Code cần chương trình `pdftoppm` (poppler) để đọc theo cụm trang. Nếu máy không có, công cụ tự chuyển sang dựng ảnh từng trang bằng `extract_assets.exe` có sẵn — chậm hơn nhưng không cần cài thêm gì.
+- Với PDF trên 10 trang, agent dựng ảnh từng cụm trang bằng `extract_assets.exe` có sẵn (PyMuPDF) để đọc, nên không cần cài thêm chương trình `pdftoppm` (poppler) mà công cụ đọc PDF của Claude Code đòi hỏi khi đọc theo cụm trang.
 - [`.claude/settings.json`](./.claude/settings.json) cho phép Claude Code chạy 3 script công cụ trong `tools\` mà không hỏi lại mỗi lần. Nếu muốn được hỏi trước mỗi lệnh, xóa các dòng trong `permissions.allow`.
 
 ## Yêu cầu hệ thống
@@ -43,7 +43,7 @@ Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab 
 ## Lý do tồn tại
 Tôi đã có sản phẩm https://github.com/kiencang/PDF-silaTranslator có chức năng tương đương, nhưng hiện tại chỉ API Key trả phí mới sử dụng được. 
 
-**Max Luka Loop và [Luka-Loop](https://github.com/kiencang/Luka-Loop):** Max Luka Loop được tách ra từ Luka-Loop (v1.1.17) để phát triển riêng. Khác biệt chính nằm ở khâu tách ảnh: Luka-Loop tìm hình bằng các quy tắc hình học, còn Max Luka Loop dùng mô hình bố cục **Egret Medium** của dự án [Docling](https://github.com/docling-project/docling) (IBM Research), nên cắt hình chính xác hơn và xử lý được cả PDF scan. Đổi lại, gói tải về nặng hơn (khoảng 220 MB so với khoảng 60 MB) và tách ảnh chậm hơn. Trên bộ kiểm thử DocLayNet (943 trang bài báo khoa học), số trang có lỗi tách hình nghiêm trọng giảm từ 44 xuống 11.
+**Max Luka Loop và [Luka-Loop](https://github.com/kiencang/Luka-Loop):** Max Luka Loop được tách ra từ Luka-Loop (v1.1.17) để phát triển riêng. Khác biệt chính nằm ở khâu tách ảnh: Luka-Loop tìm hình bằng các quy tắc hình học, còn Max Luka Loop dùng mô hình bố cục **Egret Medium** của dự án [Docling](https://github.com/docling-project/docling) (IBM Research), nên cắt hình chính xác hơn và xử lý được cả PDF scan. Đổi lại, gói tải về nặng hơn (khoảng 220 MB so với khoảng 60 MB) và tách ảnh chậm hơn. Trên bộ kiểm thử DocLayNet (943 trang bài báo khoa học), số trang có lỗi tách hình nghiêm trọng giảm từ 44 xuống 14.
 
 ## Cấu trúc dự án
 - [`AGENTS.md`](./AGENTS.md) — Quy tắc điều phối dành cho AI Agent trong workspace.

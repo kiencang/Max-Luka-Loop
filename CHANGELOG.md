@@ -2,9 +2,15 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.0.2] - 2026-11-22
+### Changed
+- Ảnh hình được cắt sát đúng khung mà mô hình Egret tìm ra, không còn thêm lề 4 pt mỗi cạnh, đúng như cách Docling cắt ảnh. Trên DocLayNet test, ảnh lẹm ít chữ thân bài hơn mà không làm mất nội dung hình nào.
+- Claude Code: PDF tới 10 trang được đọc bằng một lệnh `Read` không kèm tham số `pages`. Trước đây agent đôi khi tự thêm `pages: "1-5"`, gặp lỗi `pdftoppm is not installed` rồi phải render trang thành ảnh, mất lớp chữ chính xác của PDF.
+- Hai `SKILL.md` mô tả đúng cách tách ảnh hiện tại: cắt sát khung, và hình nhiều panel có thể ra thành nhiều ảnh cùng một `caption`, cần đặt chung một chú thích (thay cho mô tả cũ "nới lề 4 pt", "gộp cụm hình theo chú thích" của bộ tách ảnh trước).
+
 ## [1.0.1] - 2026-11-22
 ### Fixed
-- Lệnh ngay cho Calude dùng Render Pages để đọc các file PDF trên 10 trang (tránh việc tự tìm cách cài đặt các công cụ khác để xử lý);
+- Lệnh ngay cho Claude dùng `RenderPages` để đọc các file PDF trên 10 trang (tránh việc tự tìm cách cài đặt các công cụ khác để xử lý);
 
 ## [1.0.0] - 2026-11-22
 Bản phát hành đầu tiên của **Max Luka Loop** (`max-luka-loop`), dựng lại từ mã nguồn [Luka-Loop](https://github.com/kiencang/Luka-Loop) v1.1.17 (cùng tác giả). Lịch sử thay đổi trước đó xem tại dự án gốc.

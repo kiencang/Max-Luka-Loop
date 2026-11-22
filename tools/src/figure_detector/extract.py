@@ -34,6 +34,10 @@ from .text import (
 )
 
 DETECTORS = ("egret", "heuristic")
+# Margin added around each box when cropping the PNG (PDF points per side). Egret follows Docling, which crops
+# the picture box exactly (standard_pdf_pipeline.py: `page.image.crop(bbox)`); the legacy rule-based detector keeps
+# its historical 4 pt so its regression snapshots stay valid.
+CROP_PAD_PT = {"egret": 0.0, "heuristic": 4.0}
 
 
 def _select_detector(detector: str):
@@ -165,7 +169,8 @@ def extract_images(
             for idx0, cand in enumerate(candidates):
                 idx = idx0 + 1
                 bb = cand.rect
-                clip = pymupdf.Rect(bb.x0 - 4.0, bb.y0 - 4.0, bb.x1 + 4.0, bb.y1 + 4.0) & ctx.page_rect
+                pad = CROP_PAD_PT[detector]
+                clip = pymupdf.Rect(bb.x0 - pad, bb.y0 - pad, bb.x1 + pad, bb.y1 + pad) & ctx.page_rect
                 if clip.is_empty:
                     continue
                 out_name = f"fig_p{pno}_{idx}.png"

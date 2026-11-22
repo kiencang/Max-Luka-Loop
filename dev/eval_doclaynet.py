@@ -70,7 +70,10 @@ LENIENT_MAX_GROWTH = 2.0     # ... and is at most 2x its area
 PART_COVER = 0.5             # "mostly inside" for merge/split/fragment attribution
 
 # Severity thresholds.
-RENDER_PAD = 4.0             # extract_images renders each box with 4 pt padding on every side
+# Margin extract_images adds around each box when cropping (figure_detector.extract.CROP_PAD_PT): 4 pt for the
+# heuristic detector, 0 for Egret (Docling crops exactly). main() sets it per --detector; worker processes read it
+# from the environment variable, which they inherit.
+RENDER_PAD = float(os.environ.get("MAX_LUKA_EVAL_RENDER_PAD", "4.0"))
 MISS_BELOW = 0.5             # Picture area covered by extracted images below this -> missed
 AREA_OK = 0.9                # ... below this (but not missed) -> graphic area clipped
 MAJOR_CUT_CELLS = 3          # >= this many visibly cut text cells (or area clipped) -> major clip, else minor
@@ -908,6 +911,13 @@ def main(argv: list[str] | None = None) -> None:
         ap.error("--disable-rule only applies to the heuristic detector")
     if args.detector == "egret" and not EGRET_MODEL.is_file():
         ap.error(f"Egret model missing: {EGRET_MODEL} (build it with dev\\egret\\export_onnx.py)")
+    global RENDER_PAD
+    if str(SRC_DIR) not in sys.path:
+        sys.path.insert(0, str(SRC_DIR))
+    from figure_detector.extract import CROP_PAD_PT
+
+    RENDER_PAD = CROP_PAD_PT[args.detector]
+    os.environ["MAX_LUKA_EVAL_RENDER_PAD"] = str(RENDER_PAD)  # inherited by the ink-check worker processes
     fp = detector_fingerprint(args.disable_rule, args.detector)
     raw = run_pages(entries, args.disable_rule, args.workers, args.cache_dir / "pages" / f"{fp}.jsonl", args.detector)
     gt = load_ground_truth(entries, args.workers, args.cache_dir)
@@ -922,7 +932,7 @@ def main(argv: list[str] | None = None) -> None:
     out.mkdir(parents=True, exist_ok=True)
     summary = {
         "subsets": subsets, "limit": args.limit, "seed": args.seed, "detector": args.detector,
-        "detector_fingerprint": fp,
+        "render_pad_pt": RENDER_PAD, "detector_fingerprint": fp,
         "disabled_rules": args.disable_rule, **summarize(results),
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
