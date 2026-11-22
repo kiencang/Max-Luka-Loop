@@ -111,7 +111,10 @@ Bạn là **Chuyên gia Dịch thuật Học thuật Song ngữ (Anh–Việt)**
    ```
 2. **Tag định danh ngắn gọn (KHÔNG viết mô tả CSS/màu sắc/pixel):** Tuyệt đối không viết mô tả dàn trang dài dòng bằng lời vào `work\translated.md` *(vì ở Bước 3 Agent sẽ đọc thẳng `si_layout.md` kết hợp nhìn ảnh tách được + PDF gốc + `manifest.json`)*. Chỉ dùng các nhãn tag siêu ngắn khi cần định vị cấu trúc:
    - `[HEADER]` / `[FOOTER]`: tiêu đề lặp đầu/cuối trang hoặc số trang in gốc (chỉ giữ nếu có giá trị tham chiếu/nhận diện trang).
-   - `[FIG: fig_pX_Y.png]` *(hoặc tên `out_name` từ `CropFromJson`)*: hình Nhóm B kèm toàn văn chú thích gốc đã dịch (không bao giờ chép bản rút gọn `...` từ stdout). Đặt tag đúng chỗ hình xuất hiện trong mạch đọc gốc (theo `page`, cột `x0/x1` và `y0` trong `manifest.json`, đối chiếu nhãn/số in trên hình), **không** theo thứ tự tên tệp: `Y` chỉ là số quét từ trên xuống toàn trang, chạy so le giữa các cột.
+   - `[FIG: fig_pX_Y.png]` *(hoặc tên `out_name` từ `CropFromJson`)*: hình Nhóm B kèm toàn văn chú thích gốc đã dịch (không bao giờ chép bản rút gọn `...` từ stdout). Đặt tag đúng chỗ hình xuất hiện trong mạch đọc gốc. **Không** suy vị trí từ số `Y` trong tên tệp:
+     - `X` là số trang vật lý trong tệp PDF (đếm từ 1, không phải số trang in).
+     - Ảnh cắt bằng `CropFromJson` mang tên `out_name`, không theo mẫu này.
+     - Xác định vị trí bằng `page` và `box` trong `manifest.json`, rồi đối chiếu nhãn/số in trên hình (①, *Step 3*, *(a)*…) nếu có. Phải quan sát bản gốc để đặt vị trí được chính xác.
    - `[TBL-IMG: fig_pX_Y.png]`: ảnh nhỏ nằm trong ô bảng.
    - `[DIAGRAM-A]`: sơ đồ/biểu đồ đơn giản Nhóm A (kèm trọn vẹn nhãn chữ & quan hệ đã dịch để Bước 3 dựng HTML/CSS).
    - `[CALLOUT]`: hộp định lý/ghi chú/cảnh báo nổi bật.

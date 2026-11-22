@@ -2,6 +2,10 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.0.4] - 2026-11-22
+### Changed
+- Skill giữ bố cục: quy tắc thứ tự hình viết tổng quát hơn. Agent xếp hình đúng thứ tự như bản gốc (không chỉ theo cột), xác định vị trí bằng `page` + `box` trong `manifest.json` và quan sát trang gốc, đối chiếu nhãn/số in trên hình nếu có; chỉ cần biết số `Y` trong tên tệp `fig_pX_Y` không phải căn cứ thứ tự (`X` là số trang vật lý trong tệp PDF).
+
 ## [1.0.3] - 2026-11-22
 ### Fixed
 - Skill giữ bố cục (`si_layout.md`, `si_translation.md`): agent phải giữ đúng thứ tự trên–dưới của hình trong từng cột theo `y0` và đối chiếu nhãn/số in trên hình (①, ②…), không suy thứ tự từ tên tệp `fig_pX_Y` (số chạy so le giữa các cột). Trước đây hai hình bước 6 và 7 ở cột phải có thể bị đảo chỗ.
