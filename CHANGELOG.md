@@ -2,7 +2,7 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
-## [Unreleased]
+## [1.1.2] - 2026-11-22
 ### Changed
 - Auto-QA (`html_qa.py`): tách hàm kiểm tra thẻ mở `_process_start_tag` (212 dòng, 108 nhánh) thành các hàm nhỏ theo việc: cấu trúc, `<script>`, `<img>`, `<table>`, thuộc tính, và từng nhóm đường dẫn (`<a>`, `<link>`, `<img>`, `<script>`, còn lại). Mã lấy từ Luka-Loop (bản 1.1.22), nơi `html_qa.py` trước khi tách giống hệt bản ở đây. Không đổi quy tắc nào: bản cũ và bản mới cho trạng thái và kết luận giống hệt nhau trên HTML trong repo và 30.000 tài liệu sinh ngẫu nhiên.
 
