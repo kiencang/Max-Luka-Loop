@@ -360,12 +360,41 @@ class _QADOMScanner(HTMLParser):
         snippet = (body_norm[:40] + "...") if len(body_norm) > 40 else (body_norm or "<empty>")
         self._add_issue(self.disallowed_scripts, self._seen_scripts, f"<script>{snippet}</script>")
 
+    # --- Start tags -------------------------------------------------------------------------------------------
+    # `_process_start_tag` runs the checks below in a fixed order. Several results are ordered lists, so keep the
+    # order of the calls (and of the per-attribute checks) when changing anything here.
+
     def _process_start_tag(self, tag: str, attrs: list[tuple[str, str | None]], self_closing: bool) -> None:
         self._flush_prose()
         t = tag.lower()
         if self._in_tags(_RAW_DOM_EXCLUDED_TAGS):
             return
 
+        self._track_structure_open(t, self_closing)
+
+        if t == "head":
+            self.has_head_open = True
+        elif t == "body":
+            self.has_body_open = True
+        elif t == "script":
+            self._start_script(attrs, self_closing)
+        elif t == "style" and not self_closing:
+            self._style_buf.clear()
+        elif t == "img":
+            self._start_img(attrs)
+        elif t == "table":
+            self._start_table()
+
+        is_wrapper, elem_id, meta_http_equiv = self._scan_attributes(t, attrs)
+
+        if t == "meta" and meta_http_equiv in _FORBIDDEN_META_HTTP_EQUIV:
+            self._add_issue(self.disallowed_tags, self._seen_tags, f'<meta http-equiv="{meta_http_equiv}">')
+
+        if not self_closing and t not in _HTML_VOID_TAGS:
+            self._open_stack.append((t, is_wrapper, elem_id))
+
+    def _track_structure_open(self, t: str, self_closing: bool) -> None:
+        """Close an implicit <p>, flag forbidden tags and raw-text tags inside SVG/MathML, track foreign depth."""
         if t in _P_AUTO_CLOSE_TRIGGERS:
             self._close_implicit_p()
 
@@ -383,65 +412,65 @@ class _QADOMScanner(HTMLParser):
         if t in self._foreign_depth and not self_closing:
             self._foreign_depth[t] += 1
 
-        if t == "head":
-            self.has_head_open = True
-        elif t == "body":
-            self.has_body_open = True
-        elif t == "script":
-            in_head = any(t_name == "head" for t_name, _, _ in self._open_stack)
-            script_srcs = ["" if v is None else v for k, v in attrs if (k or "").lower() == "src"]
-            if self_closing:
-                first_src = script_srcs[0].strip()[:80] if script_srcs else ""
-                desc = f'<script src="{first_src}"/>' if script_srcs else "<script/>"
-                self._add_issue(self.disallowed_scripts, self._seen_scripts, desc)
-            elif len(script_srcs) > 1:
-                self._add_issue(self.disallowed_scripts, self._seen_scripts, "<script (duplicate src)>")
-                self._active_script = {"in_head": False, "src": script_srcs[0], "body": []}
-            else:
-                script_src = script_srcs[0] if script_srcs else None
-                self._active_script = {"in_head": in_head, "src": script_src, "body": []}
-        elif t == "style" and not self_closing:
-            self._style_buf.clear()
-        elif t == "img":
-            has_alt = False
-            has_nonempty_src = False
-            in_lightbox = any(
-                t_name == "div" and eid in _LIGHTBOX_IDS
-                for t_name, _, eid in self._open_stack
-            )
-            for k, v in attrs:
-                kl = (k or "").lower()
-                if kl == "alt":
-                    has_alt = True
-                elif kl == "src" and v is not None:
-                    src_val = v.strip()
-                    if not src_val:
-                        continue
-                    has_nonempty_src = True
-                    norm_uri = _STRIP_CTRL_WS_RX.sub("", src_val)
-                    if _DATA_IMG_RX.match(norm_uri):
-                        self.b64_count += 1
-                    elif (
-                        norm_uri.startswith(("//", "\\\\"))
-                        or (_URI_SCHEME_RX.match(norm_uri) and not _EXTERNAL_URL_RX.match(norm_uri))
-                    ):
-                        pass  # Caught by URI allowlist security check below
-                    elif _EXTERNAL_URL_RX.match(norm_uri):
-                        if not self._allow_external_images:
-                            self._add_issue(self.external_img_srcs, self._seen_ext_imgs, src_val[:120])
-                    else:
-                        self.unembedded_imgs += 1
-                        self._add_issue(self.unembedded_img_srcs, self._seen_unembedded_imgs, src_val[:120])
-            if not has_nonempty_src and not in_lightbox:
-                self.unembedded_imgs += 1
-                self._add_issue(self.unembedded_img_srcs, self._seen_unembedded_imgs, "<empty src>")
-            if not has_alt:
-                self.missing_alt_imgs += 1
-        elif t == "table":
-            self.table_count += 1
-            if any(is_w for _, is_w, _ in self._open_stack):
-                self.wrapped_table_count += 1
+    def _start_script(self, attrs: list[tuple[str, str | None]], self_closing: bool) -> None:
+        """Reject self-closing / duplicate-src scripts; otherwise buffer the script for `_finalize_active_script`."""
+        in_head = any(t_name == "head" for t_name, _, _ in self._open_stack)
+        script_srcs = ["" if v is None else v for k, v in attrs if (k or "").lower() == "src"]
+        if self_closing:
+            first_src = script_srcs[0].strip()[:80] if script_srcs else ""
+            desc = f'<script src="{first_src}"/>' if script_srcs else "<script/>"
+            self._add_issue(self.disallowed_scripts, self._seen_scripts, desc)
+        elif len(script_srcs) > 1:
+            self._add_issue(self.disallowed_scripts, self._seen_scripts, "<script (duplicate src)>")
+            self._active_script = {"in_head": False, "src": script_srcs[0], "body": []}
+        else:
+            script_src = script_srcs[0] if script_srcs else None
+            self._active_script = {"in_head": in_head, "src": script_src, "body": []}
 
+    def _start_img(self, attrs: list[tuple[str, str | None]]) -> None:
+        """Count embedded/unembedded/external images and missing alt (dangerous schemes: `_check_img_src_uri`)."""
+        has_alt = False
+        has_nonempty_src = False
+        in_lightbox = any(
+            t_name == "div" and eid in _LIGHTBOX_IDS
+            for t_name, _, eid in self._open_stack
+        )
+        for k, v in attrs:
+            kl = (k or "").lower()
+            if kl == "alt":
+                has_alt = True
+            elif kl == "src" and v is not None:
+                src_val = v.strip()
+                if not src_val:
+                    continue
+                has_nonempty_src = True
+                norm_uri = _STRIP_CTRL_WS_RX.sub("", src_val)
+                if _DATA_IMG_RX.match(norm_uri):
+                    self.b64_count += 1
+                elif (
+                    norm_uri.startswith(("//", "\\\\"))
+                    or (_URI_SCHEME_RX.match(norm_uri) and not _EXTERNAL_URL_RX.match(norm_uri))
+                ):
+                    pass  # Reported by the URI allowlist in `_check_uri_attr`
+                elif _EXTERNAL_URL_RX.match(norm_uri):
+                    if not self._allow_external_images:
+                        self._add_issue(self.external_img_srcs, self._seen_ext_imgs, src_val[:120])
+                else:
+                    self.unembedded_imgs += 1
+                    self._add_issue(self.unembedded_img_srcs, self._seen_unembedded_imgs, src_val[:120])
+        if not has_nonempty_src and not in_lightbox:
+            self.unembedded_imgs += 1
+            self._add_issue(self.unembedded_img_srcs, self._seen_unembedded_imgs, "<empty src>")
+        if not has_alt:
+            self.missing_alt_imgs += 1
+
+    def _start_table(self) -> None:
+        self.table_count += 1
+        if any(is_w for _, is_w, _ in self._open_stack):
+            self.wrapped_table_count += 1
+
+    def _scan_attributes(self, t: str, attrs: list[tuple[str, str | None]]) -> tuple[bool, str, str]:
+        """Check every attribute of `<t>`; return (is table wrapper, lower-cased id, meta http-equiv)."""
         is_wrapper = False
         elem_id = ""
         meta_http_equiv = ""
@@ -454,20 +483,8 @@ class _QADOMScanner(HTMLParser):
         for k, v in attrs:
             kl = (k or "").lower()
             val_str = "" if v is None else v
-            if _EVENT_HANDLER_ATTR_RX.match(kl) or kl in ("srcdoc", "ping"):
-                self._add_issue(self.disallowed_event_handlers, self._seen_handlers, f"<{t} {kl}>")
-            if kl == "srcset" and val_str.strip():
-                self._add_issue(
-                    self.disallowed_external_resources,
-                    self._seen_ext_res,
-                    f'<{t} srcset="{val_str.strip()[:100]}">',
-                )
-            if kl in ("id", "name") and val_str.strip().lower() == "mathjax":
-                self._add_issue(
-                    self.disallowed_tags,
-                    self._seen_tags,
-                    f'<{t} {kl}="MathJax"> (DOM clobbering)',
-                )
+            self._check_active_attr(t, kl, val_str)
+
             if kl == "id" and val_str:
                 id_val = val_str.strip()
                 if id_val:
@@ -482,96 +499,104 @@ class _QADOMScanner(HTMLParser):
                 self._scan_css_text(val_str, source=f"<{t} style>")
 
             if kl in _URI_ATTRS and val_str:
-                norm_uri = _STRIP_CTRL_WS_RX.sub("", val_str)
-                if norm_uri:
-                    # Strict URI allowlist by element/attribute role
-                    if norm_uri.startswith(("//", "\\\\")):
-                        self._add_issue(
-                            self.dangerous_uris,
-                            self._seen_uris,
-                            f'<{t} {kl}="{norm_uri[:60]}">',
-                        )
-                    elif t in ("a", "area") and kl == "href":
-                        if _URI_SCHEME_RX.match(norm_uri) and not _SAFE_LINK_SCHEME_RX.match(norm_uri):
-                            self._add_issue(
-                                self.dangerous_uris,
-                                self._seen_uris,
-                                f'<{t} {kl}="{norm_uri[:60]}">',
-                            )
-                    elif t == "link" and kl == "href":
-                        if _URI_SCHEME_RX.match(norm_uri) and not _ALLOWED_CSS_REMOTE_RX.match(norm_uri):
-                            if _DANGEROUS_URI_SCHEME_RX.match(norm_uri) or norm_uri.lower().startswith("data:"):
-                                self._add_issue(
-                                    self.dangerous_uris,
-                                    self._seen_uris,
-                                    f'<link href="{norm_uri[:60]}">',
-                                )
-                            else:
-                                self._add_issue(
-                                    self.disallowed_external_resources,
-                                    self._seen_ext_res,
-                                    f'<link href="{val_str.strip()[:100]}">',
-                                )
-                        elif not _ALLOWED_CSS_REMOTE_RX.match(norm_uri) or (link_rels and not (link_rels <= _ALLOWED_LINK_RELS)):
-                            self._add_issue(
-                                self.disallowed_external_resources,
-                                self._seen_ext_res,
-                                f'<link href="{val_str.strip()[:100]}">',
-                            )
-                    elif t == "img" and kl == "src":
-                        if _URI_SCHEME_RX.match(norm_uri):
-                            if _DATA_IMG_RX.match(norm_uri) or _EXTERNAL_URL_RX.match(norm_uri):
-                                pass  # Handled cleanly in `t == "img"` block above
-                            else:
-                                self._add_issue(
-                                    self.dangerous_uris,
-                                    self._seen_uris,
-                                    f'<img src="{norm_uri[:60]}">',
-                                )
-                    elif t == "script" and kl == "src":
-                        if _URI_SCHEME_RX.match(norm_uri) and not _ALLOWED_MATHJAX_SRC_RX.match(norm_uri):
-                            if not _EXTERNAL_URL_RX.match(norm_uri):
-                                self._add_issue(
-                                    self.dangerous_uris,
-                                    self._seen_uris,
-                                    f'<script src="{norm_uri[:60]}">',
-                                )
-                    else:
-                        # All remaining URI attributes (SVG <use>/<image>/<feImage>, <audio>/<video>/<source>,
-                        # background/poster/data/action/formaction): allow only internal #fragment references.
-                        if not norm_uri.startswith("#"):
-                            if _EXTERNAL_URL_RX.match(norm_uri) and (
-                                (t in _SVG_EXTERNAL_HREF_TAGS and kl in ("href", "xlink:href"))
-                                or (t in _MEDIA_SRC_TAGS and kl == "src")
-                                or kl in ("background", "poster")
-                            ):
-                                self._add_issue(
-                                    self.disallowed_external_resources,
-                                    self._seen_ext_res,
-                                    f'<{t} {kl}="{val_str.strip()[:100]}">',
-                                )
-                            elif _URI_SCHEME_RX.match(norm_uri):
-                                self._add_issue(
-                                    self.dangerous_uris,
-                                    self._seen_uris,
-                                    f'<{t} {kl}="{norm_uri[:60]}">',
-                                )
-                            else:
-                                self._add_issue(
-                                    self.disallowed_external_resources,
-                                    self._seen_ext_res,
-                                    f'<{t} {kl}="{val_str.strip()[:100]}">',
-                                )
+                self._check_uri_attr(t, kl, val_str, link_rels)
                 if kl == "href":
                     href_val = val_str.strip()
                     if href_val.startswith("#") and len(href_val) > 1:
                         self.anchor_refs.append(href_val[1:])
+        return is_wrapper, elem_id, meta_http_equiv
 
-        if t == "meta" and meta_http_equiv in _FORBIDDEN_META_HTTP_EQUIV:
-            self._add_issue(self.disallowed_tags, self._seen_tags, f'<meta http-equiv="{meta_http_equiv}">')
+    def _check_active_attr(self, t: str, kl: str, val_str: str) -> None:
+        """Flag event handlers, srcdoc/ping, srcset and MathJax DOM clobbering via id/name."""
+        if _EVENT_HANDLER_ATTR_RX.match(kl) or kl in ("srcdoc", "ping"):
+            self._add_issue(self.disallowed_event_handlers, self._seen_handlers, f"<{t} {kl}>")
+        if kl == "srcset" and val_str.strip():
+            self._add_issue(
+                self.disallowed_external_resources,
+                self._seen_ext_res,
+                f'<{t} srcset="{val_str.strip()[:100]}">',
+            )
+        if kl in ("id", "name") and val_str.strip().lower() == "mathjax":
+            self._add_issue(
+                self.disallowed_tags,
+                self._seen_tags,
+                f'<{t} {kl}="MathJax"> (DOM clobbering)',
+            )
 
-        if not self_closing and t not in _HTML_VOID_TAGS:
-            self._open_stack.append((t, is_wrapper, elem_id))
+    def _check_uri_attr(self, t: str, kl: str, val_str: str, link_rels: set[str]) -> None:
+        """Strict URI allowlist by element/attribute role."""
+        norm_uri = _STRIP_CTRL_WS_RX.sub("", val_str)
+        if not norm_uri:
+            return
+        if norm_uri.startswith(("//", "\\\\")):
+            self._add_issue(self.dangerous_uris, self._seen_uris, f'<{t} {kl}="{norm_uri[:60]}">')
+        elif t in ("a", "area") and kl == "href":
+            if _URI_SCHEME_RX.match(norm_uri) and not _SAFE_LINK_SCHEME_RX.match(norm_uri):
+                self._add_issue(self.dangerous_uris, self._seen_uris, f'<{t} {kl}="{norm_uri[:60]}">')
+        elif t == "link" and kl == "href":
+            self._check_link_href(norm_uri, val_str, link_rels)
+        elif t == "img" and kl == "src":
+            self._check_img_src_uri(norm_uri)
+        elif t == "script" and kl == "src":
+            self._check_script_src_uri(norm_uri)
+        else:
+            self._check_other_uri(t, kl, norm_uri, val_str)
+
+    def _check_link_href(self, norm_uri: str, val_str: str, link_rels: set[str]) -> None:
+        """<link href>: only the allowed remote stylesheets/fonts, with allowed rel values."""
+        if _URI_SCHEME_RX.match(norm_uri) and not _ALLOWED_CSS_REMOTE_RX.match(norm_uri):
+            if _DANGEROUS_URI_SCHEME_RX.match(norm_uri) or norm_uri.lower().startswith("data:"):
+                self._add_issue(self.dangerous_uris, self._seen_uris, f'<link href="{norm_uri[:60]}">')
+            else:
+                self._add_issue(
+                    self.disallowed_external_resources,
+                    self._seen_ext_res,
+                    f'<link href="{val_str.strip()[:100]}">',
+                )
+        elif not _ALLOWED_CSS_REMOTE_RX.match(norm_uri) or (link_rels and not (link_rels <= _ALLOWED_LINK_RELS)):
+            self._add_issue(
+                self.disallowed_external_resources,
+                self._seen_ext_res,
+                f'<link href="{val_str.strip()[:100]}">',
+            )
+
+    def _check_img_src_uri(self, norm_uri: str) -> None:
+        """<img src>: any scheme other than data:image or http(s) is dangerous (counting is in `_start_img`)."""
+        if _URI_SCHEME_RX.match(norm_uri) and not (_DATA_IMG_RX.match(norm_uri) or _EXTERNAL_URL_RX.match(norm_uri)):
+            self._add_issue(self.dangerous_uris, self._seen_uris, f'<img src="{norm_uri[:60]}">')
+
+    def _check_script_src_uri(self, norm_uri: str) -> None:
+        """<script src>: a non-http scheme is dangerous (allowlisting happens in `_finalize_active_script`)."""
+        if (
+            _URI_SCHEME_RX.match(norm_uri)
+            and not _ALLOWED_MATHJAX_SRC_RX.match(norm_uri)
+            and not _EXTERNAL_URL_RX.match(norm_uri)
+        ):
+            self._add_issue(self.dangerous_uris, self._seen_uris, f'<script src="{norm_uri[:60]}">')
+
+    def _check_other_uri(self, t: str, kl: str, norm_uri: str, val_str: str) -> None:
+        """All remaining URI attributes (SVG <use>/<image>/<feImage>, <audio>/<video>/<source>,
+        background/poster/data/action/formaction): allow only internal #fragment references."""
+        if norm_uri.startswith("#"):
+            return
+        if _EXTERNAL_URL_RX.match(norm_uri) and (
+            (t in _SVG_EXTERNAL_HREF_TAGS and kl in ("href", "xlink:href"))
+            or (t in _MEDIA_SRC_TAGS and kl == "src")
+            or kl in ("background", "poster")
+        ):
+            self._add_issue(
+                self.disallowed_external_resources,
+                self._seen_ext_res,
+                f'<{t} {kl}="{val_str.strip()[:100]}">',
+            )
+        elif _URI_SCHEME_RX.match(norm_uri):
+            self._add_issue(self.dangerous_uris, self._seen_uris, f'<{t} {kl}="{norm_uri[:60]}">')
+        else:
+            self._add_issue(
+                self.disallowed_external_resources,
+                self._seen_ext_res,
+                f'<{t} {kl}="{val_str.strip()[:100]}">',
+            )
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self._process_start_tag(tag, attrs, self_closing=False)
