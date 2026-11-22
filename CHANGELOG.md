@@ -2,6 +2,10 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.0.3] - 2026-11-22
+### Fixed
+- Skill giữ bố cục (`si_layout.md`, `si_translation.md`): agent phải giữ đúng thứ tự trên–dưới của hình trong từng cột theo `y0` và đối chiếu nhãn/số in trên hình (①, ②…), không suy thứ tự từ tên tệp `fig_pX_Y` (số chạy so le giữa các cột). Trước đây hai hình bước 6 và 7 ở cột phải có thể bị đảo chỗ.
+
 ## [1.0.2] - 2026-11-22
 ### Changed
 - Ảnh hình được cắt sát đúng khung mà mô hình Egret tìm ra, không còn thêm lề 4 pt mỗi cạnh, đúng như cách Docling cắt ảnh. Trên DocLayNet test, ảnh lẹm ít chữ thân bài hơn mà không làm mất nội dung hình nào.
