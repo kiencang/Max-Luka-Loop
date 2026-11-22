@@ -30,7 +30,7 @@ Dung lượng file: Nếu bạn tải file lên từ khung chat, giới hạn c�
 Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab Code trong ứng dụng Claude desktop, hoặc lệnh `claude` trong terminal) trên Windows:
 
 - Mở thư mục `max-luka-loop` trong Claude Code. Lần đầu mở, hãy chấp nhận hộp thoại tin cậy thư mục (workspace trust) để các quyền chạy sẵn trong [`.claude/settings.json`](./.claude/settings.json) có hiệu lực.
-- Gõ yêu cầu kèm đường dẫn tệp PDF, ví dụ `Dịch input/bao-cao.pdf sang tiếng Việt.` (hoặc thêm `và bảo toàn thiết kế/layout.`). Bạn cũng có thể gọi trực tiếp `/pdf-to-html-vi` hoặc `/pdf-to-html-vi-layout`.
+- Gõ yêu cầu kèm đường dẫn tệp PDF, ví dụ `Dịch input/bao-cao.pdf sang tiếng Việt.` (hoặc thêm `và bảo toàn thiết kế/layout.`).
 - Với PDF trên 10 trang, agent dựng ảnh từng cụm trang bằng `extract_assets.exe` có sẵn (PyMuPDF) để đọc, nên không cần cài thêm chương trình `pdftoppm` (poppler) mà công cụ đọc PDF của Claude Code đòi hỏi khi đọc theo cụm trang.
 - [`.claude/settings.json`](./.claude/settings.json) cho phép Claude Code chạy 3 script công cụ trong `tools\` mà không hỏi lại mỗi lần. Nếu muốn được hỏi trước mỗi lệnh, xóa các dòng trong `permissions.allow`.
 
