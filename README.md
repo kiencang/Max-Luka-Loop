@@ -1,7 +1,7 @@
 # Max Luka Loop
-Công cụ AI Agent tự động dịch tài liệu PDF từ tiếng Anh sang tiếng Việt. Không yêu cầu cài thêm bất cứ phần mềm hỗ trợ nào. Chỉ cần mở thư mục trên [Antigravity](https://antigravity.google/), Claude Code là bắt đầu dùng được ngay.
+Công cụ AI Agent tự động dịch tài liệu PDF từ tiếng Anh sang tiếng Việt. Không yêu cầu cài thêm bất cứ phần mềm (ngoài công cụ này và phần mềm desktop Agent mà bạn hay dùng) hỗ trợ nào. Chỉ cần mở thư mục trên các agent như [Antigravity](https://antigravity.google/), [Claude Code](https://claude.com/product/claude-code) là bắt đầu dùng được ngay. Một số agent khác mà bạn có thể thử là [Cursor](https://cursor.com/) và [Goose](https://goose-docs.ai/).
 
-- Định dạng đầu vào: PDF, nên dưới 50 trang. Hình ảnh, biểu đồ được tìm bằng mô hình bố cục Egret (chạy ngay trên CPU của máy), nên **cả PDF scan cũng được tự động cắt hình**; riêng phần chữ của bản scan vẫn tốn thời gian hơn vì AI phải đọc từ ảnh trang.
+- Định dạng đầu vào: PDF, nên dưới 50 trang. Ở phiên bản này, ngay cả **PDF scan cũng được tự động cắt hình**, đây là điểm mạnh nhất của công cụ so với phiên bản nhỏ gọn hơn của nó.
 - Định dạng đầu ra mặc định: Bản dịch tiếng Việt trả về ở cả 2 định dạng đồng thời là HTML và PDF. Định dạng HTML thường có kết quả hiển thị tốt hơn.
 
 PS: Nếu file PDF bạn hay dùng để dịch là file tiêu chuẩn (không phải dạng scan), bạn có thể sử dụng phiên bản nhỏ gọn hơn của Max-Luka-Loop ở đây: https://github.com/kiencang/Luka-Loop
@@ -12,13 +12,13 @@ Rất đơn giản, bạn tải trực tiếp gói dựng sẵn mới nhất t�
 - **Tải bản mới nhất:** [max-luka-loop-win-x64.zip](https://github.com/kiencang/Max-Luka-Loop/releases/latest/download/max-luka-loop-win-x64.zip)
 - *(Nếu mở trang [GitHub Releases](https://github.com/kiencang/Max-Luka-Loop/releases), hãy chọn tệp **`max-luka-loop-win-x64.zip`** trong mục **Assets** — không tải `Source code (zip)` vì gói mã nguồn thô từ Git không kèm sẵn `extract_assets.exe`).*
 
-Sau đó giải nén file zip đó ở bất kỳ thư mục làm việc nào mà bạn muốn. Khi giải nén, nhớ chọn tùy chọn `Extract Here`, mở thư mục `max-luka-loop` vừa giải nén thấy ngay file có tên `AGENTS.md` nghĩa là bạn đã giải nén thành công (nếu thích, bạn có thể đổi tên thư mục `max-luka-loop` sang tên khác cũng không vấn đề gì).
+Sau đó giải nén file zip đó ở bất kỳ thư mục làm việc nào mà bạn muốn. Khi giải nén, nhớ chọn tùy chọn `Extract Here`, mở thư mục `max-luka-loop` vừa giải nén thấy ngay file có tên `AGENTS.md` nghĩa là bạn đã giải nén thành công (nếu thích, bạn có thể đổi tên thư mục `max-luka-loop` sang tên khác cũng không vấn đề gì). PS: Nếu giải nén theo kiểu `Etract to` sẽ tạo thành 2 thư mục lồng nhau và sẽ không dùng được, nên bạn nhớ dùng `Extract Here` nhé! 
 
 Phần khó nhất đã xong! Giờ để dùng công cụ dịch, bạn chỉ việc vào Antigravity, chọn `Workspace > Create Project > Add Folder`, rồi bạn thêm thư mục vừa giải nén xong là OK.
 
 Giờ thì bạn chỉ việc tải file PDF vào khung chat rồi gõ câu lệnh kiểu như `Dịch tài liệu sang tiếng Việt.` là agent Gemini sẽ tiến hành dịch, và gửi kết quả về ở cả 2 định dạng HTML và PDF. 
 
-Nếu muốn bản dịch **giữ sát bố cục/thiết kế gốc** của từng trang của PDF (sách, tạp chí, tài liệu nhiều cột...), hãy nêu rõ trong yêu cầu (ví dụ: `Dịch tài liệu sang tiếng Việt và bảo toàn thiết kế/layout.`).
+Nếu muốn bản dịch **giữ sát bố cục/thiết kế gốc** của từng trang của PDF (sách, tạp chí, tài liệu nhiều cột...), hãy nêu rõ trong yêu cầu (ví dụ: `Dịch tài liệu sang tiếng Việt và bảo toàn thiết kế/layout.`). Lưu ý là với cách dịch yêu cầu bố cục giống bản gốc sẽ tiêu tốn token hơn đáng kể, khoảng gần gấp đôi so với kiểu mặc định, vì thế bạn chỉ nên dùng khi cần thiết.
 
 Dung lượng file: Nếu bạn tải file lên từ khung chat, giới hạn của Antigravity là 10MB, trường hợp bạn có file lớn hơn, bạn nên đặt vào thư mục `input` của chương trình này.
 
