@@ -2,7 +2,7 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
-## [Unreleased]
+## [1.1.1] - 2026-11-22
 ### Fixed
 - Chọn chế độ giữ thiết kế: `AGENTS.md` và hai `SKILL.md` nhận diện theo quy tắc ("giữ/giữ nguyên/bảo toàn" + "định dạng/format/bố cục/layout/thiết kế/trình bày") kèm ví dụ, thay cho danh sách 5 cụm từ cố định. Trước đây câu "Giữ định dạng" bị chuyển sang skill mặc định (bản một cột). Thêm ví dụ các yêu cầu về nội dung ("dịch sát nghĩa", "giữ hình ảnh/bảng biểu") không được nhầm thành chế độ giữ thiết kế.
 
