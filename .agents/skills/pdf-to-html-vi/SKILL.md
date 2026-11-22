@@ -1,7 +1,7 @@
 ---
 name: pdf-to-html-vi
 description: >-
-  Quy trình mặc định dịch tài liệu PDF sang tiếng Việt, xuất một tệp HTML (kèm bản PDF) dễ đọc trên trình duyệt: dàn lại thành một cột, giữ hình ảnh, bảng biểu và công thức. Dùng khi người dùng gửi hoặc chỉ tới tệp `.pdf` và yêu cầu dịch sang tiếng Việt (vd "dịch file PDF này", "dịch tài liệu này"). KHÔNG dùng khi người dùng yêu cầu giữ thiết kế/bố cục gốc ("bảo toàn thiết kế", "bảo toàn layout", "giữ thiết kế", "giữ layout", "giữ nguyên định dạng") — khi đó dùng skill `pdf-to-html-vi-layout`.
+  Quy trình mặc định dịch tài liệu PDF sang tiếng Việt, xuất một tệp HTML (kèm bản PDF) dễ đọc trên trình duyệt: dàn lại thành một cột, giữ hình ảnh, bảng biểu và công thức. Dùng khi người dùng gửi hoặc chỉ tới tệp `.pdf` và yêu cầu dịch sang tiếng Việt (vd "dịch file PDF này", "dịch tài liệu này"). KHÔNG dùng khi người dùng muốn giữ hình thức trình bày của bản gốc ("giữ định dạng", "giữ nguyên định dạng", "giữ format", "giữ bố cục", "giữ layout", "bảo toàn layout", "giữ thiết kế", "bảo toàn thiết kế", "giữ cách trình bày", "keep layout"…) — khi đó dùng skill `pdf-to-html-vi-layout`. Yêu cầu về nội dung như "dịch sát nghĩa", "giữ hình ảnh/bảng biểu" vẫn dùng skill này.
 ---
 
 # `pdf-to-html-vi` — Dịch PDF sang HTML Tự động, Kèm Tách Ảnh Bằng `extract_assets.exe`

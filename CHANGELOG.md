@@ -2,6 +2,10 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [Unreleased]
+### Fixed
+- Chọn chế độ giữ thiết kế: `AGENTS.md` và hai `SKILL.md` nhận diện theo quy tắc ("giữ/giữ nguyên/bảo toàn" + "định dạng/format/bố cục/layout/thiết kế/trình bày") kèm ví dụ, thay cho danh sách 5 cụm từ cố định. Trước đây câu "Giữ định dạng" bị chuyển sang skill mặc định (bản một cột). Thêm ví dụ các yêu cầu về nội dung ("dịch sát nghĩa", "giữ hình ảnh/bảng biểu") không được nhầm thành chế độ giữ thiết kế.
+
 ## [1.1.0] - 2026-11-22
 ### Changed
 - `caption`, `placement` và `context` trong `manifest.json` giờ lấy theo cách của Docling, không còn dùng quy tắc cũ (regex `Figure N`, `find_tables` của PyMuPDF, quy tắc thẳng hàng). Mọi vùng Egret tìm thấy đi qua hậu xử lý bố cục và thứ tự đọc của Docling (port trong `tools\src\figure_detector\docling_layout.py`). Chú thích là vùng `Caption` liền kề hình trong thứ tự đọc. Ảnh là `table_cell` khi không có chú thích và nằm ≥ 80% trong vùng bảng. Kiểm chứng bằng chính Docling: kết quả trùng hoàn toàn trên 943 trang DocLayNet test.

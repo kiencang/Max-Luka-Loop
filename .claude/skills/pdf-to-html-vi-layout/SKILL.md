@@ -1,7 +1,7 @@
 ---
 name: pdf-to-html-vi-layout
 description: >-
-  Quy trình dịch tệp PDF sang HTML/PDF tiếng Việt theo chế độ BẢO TOÀN TỐI ĐA THIẾT KẾ & BỐ CỤC TỪNG TRANG (tách pha dịch Markdown trung gian trước khi dựng HTML/CSS cô lập từng trang, không gắn `reader_shell.html`). SKILL này CHỈ kích hoạt khi người dùng nêu rõ các yêu cầu như "bảo toàn thiết kế", "bảo toàn layout", "giữ thiết kế", "giữ layout", "giữ nguyên định dạng"; nếu chỉ yêu cầu dịch sang tiếng Việt thì dùng skill mặc định `pdf-to-html-vi`.
+  Quy trình dịch tệp PDF sang HTML/PDF tiếng Việt theo chế độ BẢO TOÀN TỐI ĐA THIẾT KẾ & BỐ CỤC TỪNG TRANG (tách pha dịch Markdown trung gian trước khi dựng HTML/CSS cô lập từng trang, không gắn `reader_shell.html`). SKILL này kích hoạt khi người dùng muốn giữ hình thức trình bày của bản gốc: "giữ/giữ nguyên/bảo toàn" + "định dạng/format/bố cục/layout/thiết kế/trình bày" ("giữ định dạng", "giữ nguyên định dạng", "giữ format", "giữ bố cục", "giữ layout", "bảo toàn layout", "giữ thiết kế", "bảo toàn thiết kế", "giữ cách trình bày", "keep layout"…). Chỉ yêu cầu dịch sang tiếng Việt, hoặc yêu cầu về nội dung như "dịch sát nghĩa", "giữ hình ảnh/bảng biểu", thì dùng skill mặc định `pdf-to-html-vi`.
 ---
 
 # `pdf-to-html-vi-layout` — lối vào cho Claude Code
