@@ -27,7 +27,7 @@ Dung lượng file: Nếu bạn tải file lên từ khung chat, giới hạn c�
 - Nếu đặt thư mục `max-luka-loop` bên trong vùng đồng bộ đám mây (OneDrive, Google Drive, Dropbox...), hãy bật tùy chọn giữ tệp ngoại tuyến trên máy (*Always keep on this device* / *Mirror files* / *Available offline*) để `extract_assets.exe` nạp đủ các thư viện và mô hình đi kèm, và tránh lồng đường dẫn quá sâu vượt giới hạn ký tự trên Windows. Nếu mô hình không nạp được, bước tách ảnh sẽ dừng và báo lỗi thay vì cho ra kết quả kém.
 
 ## Dùng với Claude Code
-Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab Code trong ứng dụng Claude desktop, hoặc lệnh `claude` trong terminal) trên Windows:
+Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab Code trong ứng dụng Claude desktop) trên Windows:
 
 - Mở thư mục `max-luka-loop` trong Claude Code. Lần đầu mở, hãy chấp nhận hộp thoại tin cậy thư mục (workspace trust) để các quyền chạy sẵn trong [`.claude/settings.json`](./.claude/settings.json) có hiệu lực.
 - Gõ yêu cầu kèm đường dẫn tệp PDF, ví dụ `Dịch input/bao-cao.pdf sang tiếng Việt.` (hoặc thêm `và bảo toàn thiết kế/layout.`).
