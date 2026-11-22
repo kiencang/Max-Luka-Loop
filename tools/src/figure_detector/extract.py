@@ -103,6 +103,18 @@ def _detect_table_placement(
     return "figure"
 
 
+def fill_heuristic_metadata(candidates: list[CandidateBox], ctx: PageContext) -> None:
+    """Legacy heuristic detector only: caption text, placement and context from its own text rules.
+    (Egret fills these fields from Docling's layout and reading order in `egret.run_page_egret`.)"""
+    table_bboxes = [t.rect for t in ctx.get_page_tables()] if any(c.caption_idx is None for c in candidates) else []
+    for idx, cand in enumerate(candidates):
+        cand.caption_text = (
+            _clean_text(ctx.fig_captions[cand.caption_idx].text) if cand.caption_idx is not None else None
+        )
+        cand.context = None if cand.caption_text is not None else _extract_context_snippet(cand.rect, ctx.text_blocks)
+        cand.placement = _detect_table_placement(candidates, idx, ctx, table_bboxes)
+
+
 def _normalize_box(bb: pymupdf.Rect, page_rect: pymupdf.Rect) -> list[float]:
     """Normalize `bb` onto [0.0, 1.0] relative to `page_rect` (handles CropBox offsets)."""
     pw = max(1.0, float(page_rect.width))
@@ -162,9 +174,8 @@ def extract_images(
             ctx, candidates, is_scanned = run_page(page)
             if is_scanned:
                 scanned_pages.append(pno)
-            table_bboxes: list[pymupdf.Rect] = []
-            if write_meta and any(c.caption_idx is None for c in candidates):
-                table_bboxes = [t.rect for t in ctx.get_page_tables()]
+            if write_meta and detector == "heuristic":
+                fill_heuristic_metadata(candidates, ctx)
 
             for idx0, cand in enumerate(candidates):
                 idx = idx0 + 1
@@ -188,29 +199,18 @@ def extract_images(
                 saved.append(out_path)
 
                 if write_meta:
-                    cap_text = (
-                        _clean_text(ctx.fig_captions[cand.caption_idx].text)
-                        if cand.caption_idx is not None
-                        else None
-                    )
-                    ctx_text = (
-                        None
-                        if cap_text is not None
-                        else _extract_context_snippet(bb, ctx.text_blocks)
-                    )
-                    placement = _detect_table_placement(candidates, idx0, ctx, table_bboxes)
                     manifest_items.append(
                         {
                             "file": out_name,
                             "page": pno,
                             "source": cand.source,
                             "drawings": cand.drawings,
-                            "placement": placement,
+                            "placement": cand.placement,
                             "box": _normalize_box(bb, ctx.page_rect),
                             "width_px": pix.width,
                             "height_px": pix.height,
-                            "caption": cap_text,
-                            "context": ctx_text,
+                            "caption": cand.caption_text,
+                            "context": cand.context,
                         }
                     )
 

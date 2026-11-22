@@ -630,7 +630,7 @@ def _run_group(file: str, rg: int, entries: list[dict]) -> list[dict]:
     """Run the detector on the requested rows of one parquet row group (worker process)."""
     import pyarrow.parquet as pq
     import pymupdf
-    from figure_detector.extract import _detect_table_placement
+    from figure_detector.extract import fill_heuristic_metadata
 
     rows = pq.ParquetFile(file).read_row_group(rg, columns=["pdf"]).to_pylist()
     out = []
@@ -641,12 +641,13 @@ def _run_group(file: str, rg: int, entries: list[dict]) -> list[dict]:
             with pymupdf.open(stream=rows[e["row"]]["pdf"], filetype="pdf") as doc:
                 page = doc[0]
                 ctx, candidates, is_scanned = _run_detector(page)
-                tables = [t.rect for t in ctx.get_page_tables()] if any(c.caption_idx is None for c in candidates) else []
+                if _DETECTOR == "heuristic":
+                    fill_heuristic_metadata(candidates, ctx)
                 res["preds"] = [[round(v, 2) for v in c.rect] for c in candidates]
                 res["pred_meta"] = [
-                    {"source": c.source, "captioned": c.caption_idx is not None,
-                     "placement": _detect_table_placement(candidates, k, ctx, tables)}
-                    for k, c in enumerate(candidates)
+                    {"source": c.source, "captioned": c.caption_text is not None, "placement": c.placement,
+                     "caption": (c.caption_text or "")[:80] or None}
+                    for c in candidates
                 ]
                 res["is_scanned"] = is_scanned
         except Exception as exc:  # noqa: BLE001 - one broken page must not stop a 12k-page run

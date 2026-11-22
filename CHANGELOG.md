@@ -2,6 +2,16 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.1.0] - 2026-11-22
+### Changed
+- `caption`, `placement` và `context` trong `manifest.json` giờ lấy theo cách của Docling, không còn dùng quy tắc cũ (regex `Figure N`, `find_tables` của PyMuPDF, quy tắc thẳng hàng). Mọi vùng Egret tìm thấy đi qua hậu xử lý bố cục và thứ tự đọc của Docling (port trong `tools\src\figure_detector\docling_layout.py`). Chú thích là vùng `Caption` liền kề hình trong thứ tự đọc. Ảnh là `table_cell` khi không có chú thích và nằm ≥ 80% trong vùng bảng. Kiểm chứng bằng chính Docling: kết quả trùng hoàn toàn trên 943 trang DocLayNet test.
+- Trên DocLayNet test: `placement` hết 4 lỗi gán nhầm `table_cell`; nhận thêm chú thích kiểu `FIG. 3:` mà cách cũ bỏ sót. Đổi lại, như Docling, mỗi chú thích chỉ thuộc về **một** ảnh: hình nhiều panel tách thành nhiều ảnh thì chỉ một ảnh mang `caption`, các ảnh còn lại `caption: null`. Hai `SKILL.md` hướng dẫn agent nhìn ảnh để đặt các panel chung một `<figure>`. Tổng cộng trên 352 hình, số chú thích đúng là 333 (cách cũ 337). Có 2 chú thích bị gán sai do thứ tự đọc và do Egret nhận nhầm một dòng công thức là chú thích; đây là hành vi của Docling, không vá riêng.
+- `context` của ảnh trong ô bảng tách các ô cùng hàng bằng ` | `.
+
+### Added
+- `dev\egret\verify_docling_port.py`: chạy Docling gốc (`docling-slim`) và bản port trên cùng đầu ra của Egret, báo trang nào khác nhau.
+- `licenses\docling-core-MIT.txt` và mục 10 trong `THIRD_PARTY_LICENSES.md` cho phần port từ `docling-core`.
+
 ## [1.0.4] - 2026-11-22
 ### Changed
 - Skill giữ bố cục: quy tắc thứ tự hình viết tổng quát hơn. Agent xếp hình đúng thứ tự như bản gốc (không chỉ theo cột), xác định vị trí bằng `page` + `box` trong `manifest.json` và quan sát trang gốc, đối chiếu nhãn/số in trên hình nếu có; chỉ cần biết số `Y` trong tên tệp `fig_pX_Y` không phải căn cứ thứ tự (`X` là số trang vật lý trong tệp PDF).

@@ -24,6 +24,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 import figure_detector as fd  # noqa: E402
+from figure_detector import docling_layout as dl  # noqa: E402
 from figure_detector import egret  # noqa: E402
 
 HAS_NUMPY = importlib.util.find_spec("numpy") is not None
@@ -148,6 +149,105 @@ class TestPictureRects(unittest.TestCase):
         self.assertEqual(egret._picture_rects(dets, self.PAGE), [])
 
 
+class TestDoclingLayout(unittest.TestCase):
+    """Reading order and relations ported from Docling (`figure_detector/docling_layout.py`)."""
+
+    PAGE = pymupdf.Rect(0, 0, 600, 800)
+
+    @staticmethod
+    def _lines(*specs: tuple[tuple[float, float, float, float], str]) -> list:
+        return [dl.TextCell(i, pymupdf.Rect(box), text) for i, (box, text) in enumerate(specs)]
+
+    def _relations(self, dets, cells):
+        layout = dl.postprocess_layout(dets, cells, self.PAGE)
+        ordered = dl.reading_order(layout, self.PAGE)
+        caps = dl.match_captions(ordered)
+        labels = [layout.clusters[n.cid].label for n in ordered]
+        captions = {layout.clusters[g].label + str(round(layout.clusters[g].rect.y0)): layout.clusters[c].text
+                    for g, c in caps.items()}
+        return layout, ordered, labels, captions
+
+    def test_caption_below_or_above_its_picture(self) -> None:
+        cells = self._lines(((60, 80, 540, 92), "Intro text line"), ((60, 330, 300, 342), "Figure 1: Below the plot."),
+                            ((60, 360, 300, 372), "Table 1: Above the table."), ((60, 600, 540, 612), "Body text"))
+        dets = [
+            _det(egret.LABELS.index("Text"), 0.9, (60, 80, 540, 92)),
+            _det(egret.PICTURE_LABEL, 0.9, (60, 100, 540, 320)),
+            _det(egret.LABELS.index("Caption"), 0.9, (60, 330, 300, 342)),
+            _det(egret.LABELS.index("Caption"), 0.9, (60, 360, 300, 372)),
+            _det(egret.TABLE_LABEL, 0.9, (60, 380, 540, 590)),
+            _det(egret.LABELS.index("Text"), 0.9, (60, 600, 540, 612)),
+        ]
+        _, _, labels, captions = self._relations(dets, cells)
+        self.assertEqual(labels, ["Text", "Picture", "Caption", "Caption", "Table", "Text"])
+        self.assertEqual(captions, {"Picture100": "Figure 1: Below the plot.", "Table380": "Table 1: Above the table."})
+
+    def test_a_caption_owns_one_graphic_and_prose_breaks_the_run(self) -> None:
+        # Two panels side by side above one caption: Docling links the caption to one of them only.
+        cells = self._lines(((60, 330, 540, 342), "Figure 2: Two panels."), ((60, 400, 540, 412), "Prose in between."),
+                            ((60, 640, 540, 652), "Figure 3: Far away."))
+        dets = [
+            _det(egret.PICTURE_LABEL, 0.9, (60, 100, 290, 320)),
+            _det(egret.PICTURE_LABEL, 0.9, (310, 100, 540, 320)),
+            _det(egret.LABELS.index("Caption"), 0.9, (60, 330, 540, 342)),
+            _det(egret.LABELS.index("Text"), 0.9, (60, 400, 540, 412)),
+            _det(egret.PICTURE_LABEL, 0.9, (60, 420, 540, 630)),
+            _det(egret.LABELS.index("Caption"), 0.9, (60, 640, 540, 652)),
+        ]
+        layout, _, _, captions = self._relations(dets, cells)
+        self.assertEqual(sorted(captions.values()), ["Figure 2: Two panels.", "Figure 3: Far away."])
+        self.assertEqual(sum(1 for t in captions.values() if t.startswith("Figure 2")), 1)
+
+    def test_caption_without_alternative_displaces_one_that_has(self) -> None:
+        # Picture A, caption X, picture B, caption Y in one column: X could take A or B, Y only B.
+        cells = self._lines(((60, 230, 540, 242), "Caption X"), ((60, 470, 540, 482), "Caption Y"))
+        dets = [
+            _det(egret.PICTURE_LABEL, 0.9, (60, 100, 540, 220)),
+            _det(egret.LABELS.index("Caption"), 0.9, (60, 230, 540, 242)),
+            _det(egret.PICTURE_LABEL, 0.9, (60, 245, 540, 460)),
+            _det(egret.LABELS.index("Caption"), 0.9, (60, 470, 540, 482)),
+        ]
+        _, _, _, captions = self._relations(dets, cells)
+        self.assertEqual(captions, {"Picture100": "Caption X", "Picture245": "Caption Y"})
+
+    def test_two_columns_are_read_column_by_column(self) -> None:
+        cells = self._lines(((60, 80, 280, 92), "L1"), ((60, 100, 280, 112), "L2"),
+                            ((320, 80, 540, 92), "R1"), ((320, 100, 540, 112), "R2"))
+        dets = [_det(egret.LABELS.index("Text"), 0.9, tuple(c.rect)) for c in cells]
+        layout, ordered, _, _ = self._relations(dets, cells)
+        self.assertEqual([layout.clusters[n.cid].text for n in ordered], ["L1", "L2", "R1", "R2"])
+
+    def test_orphan_text_between_picture_and_caption_breaks_the_link(self) -> None:
+        cells = self._lines(((60, 325, 540, 337), "stray line"), ((60, 345, 540, 357), "Figure 4: Caption."))
+        dets = [_det(egret.PICTURE_LABEL, 0.9, (60, 100, 540, 320)), _det(egret.LABELS.index("Caption"), 0.9, (60, 345, 540, 357))]
+        layout, _, labels, captions = self._relations(dets, cells)
+        self.assertEqual(labels, ["Picture", "Text", "Caption"])  # the unlabelled line becomes an orphan Text cluster
+        self.assertEqual(captions, {})
+
+    def test_footnote_and_table_gate(self) -> None:
+        cells = self._lines(((60, 325, 540, 337), "* footnote"),)
+        dets = [
+            _det(egret.TABLE_LABEL, 0.9, (40, 380, 560, 700)),
+            _det(egret.PICTURE_LABEL, 0.9, (60, 100, 540, 320)),
+            _det(egret.LABELS.index("Footnote"), 0.9, (60, 325, 540, 337)),
+            _det(egret.PICTURE_LABEL, 0.9, (50, 400, 150, 480)),   # fully inside the table
+            _det(egret.PICTURE_LABEL, 0.9, (500, 650, 590, 760)),  # only ~44% inside
+        ]
+        layout = dl.postprocess_layout(dets, cells, self.PAGE)
+        ordered = dl.reading_order(layout, self.PAGE)
+        foot = dl.match_footnotes(ordered)
+        pics = {round(c.rect.y0): cid for cid, c in enumerate(layout.clusters) if c.label == "Picture"}
+        self.assertIn(pics[100], foot)
+        self.assertIsNotNone(dl.inside_table(layout.clusters[pics[400]], layout))
+        self.assertIsNone(dl.inside_table(layout.clusters[pics[650]], layout))
+
+    def test_text_is_joined_like_docling(self) -> None:
+        self.assertEqual(dl.sanitize_text(["Figure 1: algo-", "rithms for n-", "octanal ﬁ eld"]),
+                         "Figure 1: algorithms for n-octanal field")
+        self.assertEqual(dl.sanitize_text(["value -", "x", "6-methyl-", "5-hepten"]), "value - x 6-methyl-5-hepten")
+        self.assertEqual(dl.normalize_extracted_text("“q” ’"), "\"q\" '")
+
+
 class TestModelLoading(unittest.TestCase):
     def test_missing_model_fails_with_build_hint(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -225,11 +325,12 @@ class TestEgretEndToEnd(unittest.TestCase):
 
     def test_panels_follow_docling_and_reading_order(self) -> None:
         # The whole-figure box of Figure 2 scores 0.4984 < 0.5, so (as in Docling) its two panels stay separate
-        # images, both linked to the Figure 2 caption; figures are numbered top-to-bottom, left-to-right.
+        # images; Docling links a caption to one graphic only, so one panel carries "Figure 2" and the other none.
+        # Figures are numbered top-to-bottom, left-to-right.
         with tempfile.TemporaryDirectory() as tmp:
             man = self._extract(REPO_ROOT / "tests" / "layout_samples" / "journal_2col_academic.pdf", tmp)
         p3 = [f for f in man["figures"] if f["page"] == 3 and f["placement"] == "figure"]
-        self.assertEqual([(f["caption"] or "")[:8] for f in p3], ["Figure 2", "Figure 2", "Figure 3"], p3)
+        self.assertEqual(sorted((f["caption"] or "")[:8] for f in p3), ["", "Figure 2", "Figure 3"], p3)
         tops = [(f["page"], f["box"][1], f["box"][0]) for f in man["figures"]]
         self.assertEqual(tops, sorted(tops), "Docling tblr order: page, then top, then left")
 

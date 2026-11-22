@@ -875,12 +875,14 @@ try {
         Assert-Equal 0 $rJ.ExitCode "journal_2col_academic failed: $($rJ.Output)"
         $mJ = Get-Content (Join-Path $jAssets 'manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
         # 7 images: Fig 1, 3 table_cell thumbnails, the 2 panels of Fig 2 (its whole-figure box scores 0.4984 < 0.5,
-        # so as in Docling the panels stay separate, both linked to the Fig 2 caption) and Fig 3.
+        # so as in Docling the panels stay separate; Docling links a caption to one graphic only, so one panel
+        # carries the Fig 2 caption and the other has none) and Fig 3.
         Assert-Equal 7 $mJ.figures.Count 'journal_2col_academic figure count'
         Assert-Equal 0 $mJ.scanned_pages.Count 'journal_2col_academic scanned pages'
         $jThumbCount = @($mJ.figures | Where-Object { $_.placement -eq 'table_cell' }).Count
         Assert-Equal 3 $jThumbCount 'journal_2col_academic table_cell thumbnails'
-        Assert-Equal 2 @($mJ.figures | Where-Object { $_.caption -match '^Figure 2:' }).Count 'journal_2col_academic Fig 2 panels'
+        Assert-Equal 1 @($mJ.figures | Where-Object { $_.caption -match '^Figure 2:' }).Count 'journal_2col_academic Fig 2 caption on one panel'
+        Assert-Equal 1 @($mJ.figures | Where-Object { $_.page -eq 3 -and $_.placement -eq 'figure' -and -not $_.caption }).Count 'journal_2col_academic Fig 2 second panel uncaptioned'
         $jFig3 = @($mJ.figures | Where-Object { $_.caption -match '^Figure 3:' })
         Assert-Equal 1 $jFig3.Count 'journal_2col_academic Fig 3'
         Assert-True ($jFig3[0].caption -match 'ksat = 0\.04 cm/s') 'journal_2col_academic full Fig 3 multi-line caption'

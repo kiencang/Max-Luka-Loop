@@ -161,6 +161,11 @@ class CandidateBox:
     source: str = "vector"  # "raster", "vector", "hybrid"
     drawings: int = 0
     origin_kind: str = "vector"  # "raster" | "vector"
+    # Manifest metadata. Egret fills these from Docling's layout and reading order (`docling_layout.py`);
+    # the legacy heuristic detector gets them from `extract.fill_heuristic_metadata`.
+    caption_text: str | None = None
+    placement: str = "figure"  # "figure" | "table_cell"
+    context: str | None = None
 
 
 @dataclass(frozen=True)

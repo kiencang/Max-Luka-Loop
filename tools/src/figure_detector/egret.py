@@ -1,16 +1,14 @@
-"""Alternative Phases 2–5: find figure boxes with the Egret Medium layout model (ONNX) instead of heuristics.
+"""Phases 2–5 for the product: find figures with the Egret Medium layout model (ONNX) and describe them as Docling would.
 
 docling-layout-egret-medium (Apache-2.0, D-FINE, 19.5M params) is exported to ONNX by
 dev/egret/export_onnx.py. The graph takes the page image already resized to 640x640 and scaled to 0..1, and
 returns raw `logits [1, 300, 17]` and `pred_boxes [1, 300, 4]` (cx, cy, w, h normalized). Pre- and
 post-processing below reproduce `RTDetrImageProcessor` from transformers without torch.
 
-PyMuPDF still renders the page, extracts text for caption linking (Phase 1 + `link_captions`), counts
-drawings/images for `source`, and crops the final PNGs (Phase 6) — only the box search is replaced.
-
-The picture post-processing (`_picture_rects` and its helpers, and the constants they use) is a port of
-`LayoutPostprocessor` from Docling (docling/utils/layout_postprocessor.py, docling-slim 2.151.1):
-    Copyright The Docling Contributors. Licensed under the MIT License; full text in licenses/docling-MIT.txt.
+What happens to the detections afterwards — picture boxes, captions, footnotes, pictures inside tables —
+follows Docling's layout post-processing and rule-based reading order, ported in `docling_layout.py` (MIT,
+licenses/docling-MIT.txt and licenses/docling-core-MIT.txt). PyMuPDF renders the page, supplies the text
+lines Docling would read from the PDF, counts drawings/images for `source`, and crops the PNGs (Phase 6).
 """
 
 from __future__ import annotations
@@ -22,10 +20,10 @@ from pathlib import Path
 
 from path_guards import assert_local_no_unc_path, get_tools_dir, is_reparse_point
 
-from .captions import link_captions
+from . import docling_layout
+from .docling_layout import CONFIDENCE_THRESHOLDS  # noqa: F401 - re-exported for tests
 from .model import DEFAULT_CONFIG, CandidateBox, DetectorConfig, PageContext, _ensure_pymupdf, pymupdf
 from .pipeline import _annotate_candidate_origins
-from .text import analyze_page
 
 INPUT_SIZE = 640
 RENDER_OVERSAMPLE = 2.0
@@ -43,19 +41,6 @@ DOCUMENT_INDEX_LABEL = LABELS.index("Document Index")
 # docling/utils/layout_postprocessor.py and docling/models/inference_engines/object_detection/base.py,
 # docling-slim 2.151.1. Keep these in step with upstream rather than tuning them locally.
 MODEL_SCORE_THRESHOLD = 0.3  # engine pre-filter (BaseObjectDetectionEngineOptions.score_threshold)
-CONFIDENCE_THRESHOLDS = {  # LayoutPostprocessor.CONFIDENCE_THRESHOLDS (kept when score >= threshold)
-    "Caption": 0.5, "Footnote": 0.5, "Formula": 0.5, "List-item": 0.5, "Page-footer": 0.5, "Page-header": 0.5,
-    "Picture": 0.5, "Section-header": 0.45, "Table": 0.5, "Text": 0.5, "Title": 0.45, "Code": 0.45,
-    "Checkbox-Selected": 0.45, "Checkbox-Unselected": 0.45, "Form": 0.45, "Key-Value Region": 0.45,
-    "Document Index": 0.45,
-}
-PICTURE_OVERLAP_PARAMS = {"area_threshold": 2.0, "conf_threshold": 0.3}  # OVERLAP_PARAMS["picture"]
-WRAPPER_OVERLAP_PARAMS = {"area_threshold": 2.0, "conf_threshold": 0.2}  # OVERLAP_PARAMS["wrapper"]
-OVERLAP_IOU = 0.8            # _remove_overlapping_clusters(overlap_threshold=0.8)
-OVERLAP_CONTAINMENT = 0.8    # _remove_overlapping_clusters(containment_threshold=0.8)
-COINCIDENT_IOU = 0.8         # _resolve_coincident_pairs(iou_threshold=0.8)
-COINCIDENT_CONF_TOLERANCE = 0.1  # _resolve_coincident_pairs(conf_tolerance=0.1)
-FULL_PAGE_PICTURE_RATIO = 0.9    # _process_special_clusters: pictures covering > 90% of the page are dropped
 MODEL_FILENAME = "egret_medium.onnx"
 MAX_MODEL_BYTES = 200 * 1024 * 1024
 
@@ -199,122 +184,54 @@ def detect_layout(page: pymupdf.Page, session=None, threshold: float = MODEL_SCO
     ]
 
 
-# ---- Docling picture post-processing (port of LayoutPostprocessor's special-cluster path) ----
-# Detections play the role of Docling clusters; their index in `dets` (score order) is the cluster id.
+# ---- Docling post-processing, reading order and relations: see docling_layout.py ----
 
-
-def _area(r: pymupdf.Rect) -> float:
-    return max(0.0, r.width) * max(0.0, r.height)
-
-
-def _iou(a: pymupdf.Rect, b: pymupdf.Rect) -> float:
-    inter = _area(a & b)
-    union = _area(a) + _area(b) - inter
-    return inter / union if union > 0 else 0.0
-
-
-def _inside(a: pymupdf.Rect, b: pymupdf.Rect) -> float:
-    """Docling's `a.intersection_over_self(b)`: share of `a` lying inside `b`."""
-    return _area(a & b) / _area(a) if _area(a) > 0 else 0.0
-
-
-def _check_overlap(a: pymupdf.Rect, b: pymupdf.Rect) -> bool:
-    """SpatialClusterIndex.check_overlap with the default 0.8 / 0.8 thresholds."""
-    if _area(a) <= 0 or _area(b) <= 0:
-        return False
-    return _iou(a, b) > OVERLAP_IOU or _inside(a, b) > OVERLAP_CONTAINMENT or _inside(b, a) > OVERLAP_CONTAINMENT
-
-
-def _should_prefer(cand: Detection, other: Detection, params: dict) -> bool:
-    """LayoutPostprocessor._should_prefer_cluster, area/confidence rule (the label rules never apply to pictures)."""
-    area_ratio = _area(pymupdf.Rect(cand.box)) / max(1e-9, _area(pymupdf.Rect(other.box)))
-    conf_diff = other.score - cand.score
-    return not (area_ratio <= params["area_threshold"] and conf_diff > params["conf_threshold"])
-
-
-def _select_best(group: list[Detection], params: dict) -> Detection:
-    """LayoutPostprocessor._select_best_cluster_from_group: prefer the larger box unless clearly less confident."""
-    best = None
-    for cand in group:
-        if all(other is cand or _should_prefer(cand, other, params) for other in group):
-            if best is None or (
-                _area(pymupdf.Rect(cand.box)) > _area(pymupdf.Rect(best.box))
-                and best.score - cand.score <= params["conf_threshold"]
-            ):
-                best = cand
-    return best if best is not None else group[0]
-
-
-def _remove_overlapping(dets: list[Detection], params: dict) -> list[Detection]:
-    """LayoutPostprocessor._remove_overlapping_clusters: union-find groups of overlapping boxes, keep one each."""
-    parent = list(range(len(dets)))
-
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    rects = [pymupdf.Rect(d.box) for d in dets]
-    for i in range(len(dets)):
-        for j in range(i + 1, len(dets)):
-            if _check_overlap(rects[i], rects[j]):
-                parent[find(j)] = find(i)
-    groups: dict[int, list[int]] = {}
-    for i in range(len(dets)):
-        groups.setdefault(find(i), []).append(i)
-    kept = [dets[g[0]] if len(g) == 1 else _select_best([dets[i] for i in g], params) for g in groups.values()]
-    return sorted(kept, key=dets.index)
-
-
-def _coincident_losers(losers: list[Detection], winners: list[Detection]) -> set[int]:
-    """LayoutPostprocessor._resolve_coincident_pairs: near-identical boxes, the loser label is dropped
-    unless it is clearly (>= 0.1) more confident."""
-    drop: set[int] = set()
-    for loser in losers:
-        for winner in winners:
-            if _iou(pymupdf.Rect(loser.box), pymupdf.Rect(winner.box)) <= COINCIDENT_IOU:
-                continue
-            if loser.score - winner.score < COINCIDENT_CONF_TOLERANCE:
-                drop.add(id(loser))
-                break
-    return drop
+_TEXT_LABELS = {"Text", "List-item", "Section-header"}
+CONTEXT_MAX_CHARS = 220
 
 
 def _picture_rects(dets: list[Detection], page_rect: pymupdf.Rect) -> list[pymupdf.Rect]:
-    """Picture boxes as Docling's `_process_special_clusters` keeps them.
+    """Picture boxes as Docling's `LayoutPostprocessor` keeps them, top-to-bottom then left-to-right."""
+    layout = docling_layout.postprocess_layout(dets, [], page_rect)
+    rects = [c.rect & page_rect for c in layout.of("Picture")]
+    return sorted((r for r in rects if not r.is_empty), key=lambda r: (r.y0, r.x0))
 
-    1. per-label confidence thresholds (`score >= CONFIDENCE_THRESHOLDS[label]`);
-    2. pictures covering > 90% of the page are dropped (page backgrounds, whole scans);
-    3. overlapping pictures (IoU > 0.8 or one > 80% inside the other) collapse to the best one of each group —
-       the larger box wins unless its score is > 0.3 lower; tables and document indexes likewise among themselves;
-    4. a picture on (almost) the same box as a table or document index is dropped unless its score is
-       at least 0.1 higher, because tables are translated as text.
-    """
-    kept = [d for d in dets if d.score >= CONFIDENCE_THRESHOLDS[d.name]]
-    page_area = _area(page_rect)
-    pictures = [
-        d for d in kept
-        if d.label == PICTURE_LABEL and not (page_area > 0 and _area(pymupdf.Rect(d.box)) / page_area > FULL_PAGE_PICTURE_RATIO)
+
+def _table_row_text(rect: pymupdf.Rect, table: docling_layout.Cluster) -> str | None:
+    """Text of the table row a table-cell picture sits in (cells sharing its vertical span), left to right."""
+    row = [
+        c for c in table.cells
+        if docling_layout.ios(c.rect, rect) < 0.5
+        and min(c.rect.y1, rect.y1) - max(c.rect.y0, rect.y0) >= 0.5 * min(c.rect.height, rect.height)
     ]
-    pictures = _remove_overlapping(pictures, PICTURE_OVERLAP_PARAMS)
-    tables_and_indexes = _remove_overlapping(
-        [d for d in kept if d.label in (TABLE_LABEL, DOCUMENT_INDEX_LABEL)], WRAPPER_OVERLAP_PARAMS
+    text = " | ".join(docling_layout.sanitize_text([c.text.strip()]) for c in sorted(row, key=lambda c: c.rect.x0))
+    return text[:CONTEXT_MAX_CHARS] or None
+
+
+def _neighbour_text(cid: int, ordered: list, layout: docling_layout.PageLayout) -> str | None:
+    """Nearest text element before or after the picture in reading order (for pictures without a caption)."""
+    pos = next((k for k, n in enumerate(ordered) if n.cid == cid), None)
+    if pos is None:
+        return None
+    best = None
+    for rng in (range(pos - 1, -1, -1), range(pos + 1, len(ordered))):
+        for k in rng:
+            n = ordered[k]
+            if n.label in _TEXT_LABELS and layout.clusters[n.cid].text.strip():
+                gap = docling_layout._shortest_gap(ordered[pos], n)
+                if best is None or gap < best[0]:
+                    best = (gap, n.cid)
+                break
+    return layout.clusters[best[1]].text[:CONTEXT_MAX_CHARS] if best else None
+
+
+def _page_context(page: pymupdf.Page) -> PageContext:
+    """Only what Egret's path needs from PyMuPDF: the page box and its drawings (for `source`)."""
+    rect = page.rect
+    return PageContext(
+        page=page, page_rect=rect, pw=rect.width, ph=rect.height, text_blocks=[], fig_captions=[],
+        tab_captions=[], words=[], word_rects=[], drawings=page.get_drawings(), separator_rules=[],
     )
-    tables = [d for d in tables_and_indexes if d.label == TABLE_LABEL]
-    indexes = [d for d in tables_and_indexes if d.label == DOCUMENT_INDEX_LABEL]
-    dropped_tables = _coincident_losers(tables, indexes)
-    winners = [d for d in tables if id(d) not in dropped_tables] + indexes
-    dropped = _coincident_losers(pictures, winners)
-    rects = []
-    for d in pictures:
-        if id(d) in dropped:
-            continue
-        r = pymupdf.Rect(d.box) & page_rect
-        if not r.is_empty:
-            rects.append(r)
-    # Docling `_sort_clusters(mode="tblr")`: top-to-bottom, then left-to-right (file numbering follows it).
-    return sorted(rects, key=lambda r: (r.y0, r.x0))
 
 
 def _page_image_rects(ctx: PageContext, cfg: DetectorConfig) -> tuple[list[pymupdf.Rect], bool]:
@@ -337,16 +254,36 @@ def run_page_egret(
 ) -> tuple[PageContext, list[CandidateBox], bool]:
     """Same contract as `pipeline._run_page_pipeline`: `(PageContext, candidates, is_scanned)`.
 
-    Boxes are exactly what Docling would keep (`_picture_rects`); they are not grown, trimmed or merged.
-    PyMuPDF text (Phase 1) only attaches caption metadata (`link_captions`, which never moves a box) and
-    the image/drawing counts give `source`.
+    Everything follows Docling: picture boxes (`LayoutPostprocessor`), captions (Caption regions matched in
+    reading order), and `placement` ("table_cell" = no caption/footnote and >= 80% inside a Table region).
+    PyMuPDF supplies the text lines Docling would read from the PDF, renders, and counts images/drawings.
     """
     _ensure_pymupdf()
-    ctx = analyze_page(page, cfg=cfg)
+    ctx = _page_context(page)
     dets = detect_layout(page, session=session)
-    pic_rects = _picture_rects(dets, ctx.page_rect)
-    ctx.log(f"egret: {len(dets)} regions, {len(pic_rects)} pictures")
-    candidates = link_captions(ctx, pic_rects, cfg=cfg)
+    layout = docling_layout.postprocess_layout(dets, docling_layout.page_cells(page), ctx.page_rect)
+    ordered = docling_layout.reading_order(layout, ctx.page_rect)
+    captions = docling_layout.match_captions(ordered)
+    footnotes = docling_layout.match_footnotes(ordered)
+    pictures = sorted(
+        ((cid, c) for cid, c in enumerate(layout.clusters) if c.label == "Picture"),
+        key=lambda item: (item[1].rect.y0, item[1].rect.x0),
+    )
+    candidates: list[CandidateBox] = []
+    for cid, pic in pictures:
+        rect = pic.rect & ctx.page_rect
+        if rect.is_empty:
+            continue
+        cap = captions.get(cid)
+        caption = (layout.clusters[cap].text or None) if cap is not None else None
+        table = None if cap is not None or cid in footnotes else docling_layout.inside_table(pic, layout)
+        if table is not None:
+            cand = CandidateBox(rect, placement="table_cell", context=_table_row_text(rect, table))
+        else:
+            context = None if caption else _neighbour_text(cid, ordered, layout)
+            cand = CandidateBox(rect, caption_text=caption, placement="figure", context=context)
+        candidates.append(cand)
+    ctx.log(f"egret: {len(dets)} regions, {len(candidates)} pictures, {len(captions)} caption links")
     image_rects, full_page = _page_image_rects(ctx, cfg)
     drawing_rects = [pymupdf.Rect(d["rect"]) for d in ctx.drawings if d.get("rect") is not None]
     _annotate_candidate_origins(candidates, image_rects, drawing_rects)

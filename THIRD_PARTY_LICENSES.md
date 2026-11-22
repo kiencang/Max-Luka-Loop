@@ -16,7 +16,8 @@ Tuy nhiên, gói công cụ thực thi dựng sẵn dành cho Windows (`tools/ex
 | **ONNX Runtime 1.32.0** | `_internal/onnxruntime/capi/onnxruntime.dll`, `onnxruntime_pybind11_state.pyd` | Microsoft Corporation | **MIT** (kèm thông báo bên thứ ba) | [licenses/onnxruntime-LICENSE.txt](./licenses/onnxruntime-LICENSE.txt), [licenses/onnxruntime-ThirdPartyNotices.txt](./licenses/onnxruntime-ThirdPartyNotices.txt) |
 | **NumPy 2.5.5** (kèm OpenBLAS, thư viện GCC runtime) | `_internal/numpy/`, `_internal/numpy.libs/libscipy_openblas*.dll` | NumPy Developers; The OpenBLAS Project | **BSD-3-Clause** (OpenBLAS: BSD-3-Clause; GCC runtime: GPL-3.0 kèm GCC Runtime Library Exception) | [licenses/numpy-LICENSE.txt](./licenses/numpy-LICENSE.txt) |
 | **Mô hình docling-layout-egret-medium** (bản chuyển sang ONNX) | `_internal/models/egret_medium.onnx` | Docling Project ([Hugging Face](https://huggingface.co/docling-project/docling-layout-egret-medium)) | **Apache-2.0** | [licenses/Apache-2.0.txt](./licenses/Apache-2.0.txt) |
-| **Docling — thuật toán hậu xử lý bố cục** (mã port lại, nằm trong `extract_assets.exe` và [`tools/src/figure_detector/egret.py`](./tools/src/figure_detector/egret.py)) | `extract_assets.exe` (mã Python đã đóng gói) | The Docling Contributors | **MIT** | [licenses/docling-MIT.txt](./licenses/docling-MIT.txt) |
+| **Docling — hậu xử lý bố cục, thứ tự đọc, ghép chú thích** (mã port lại, nằm trong `extract_assets.exe` và [`tools/src/figure_detector/docling_layout.py`](./tools/src/figure_detector/docling_layout.py)) | `extract_assets.exe` (mã Python đã đóng gói) | The Docling Contributors | **MIT** | [licenses/docling-MIT.txt](./licenses/docling-MIT.txt) |
+| **docling-core — các phép so khung (`BoundingBox`)** (mã port lại, cùng tệp trên) | `extract_assets.exe` (mã Python đã đóng gói) | International Business Machines | **MIT** | [licenses/docling-core-MIT.txt](./licenses/docling-core-MIT.txt) |
 
 ---
 
@@ -62,13 +63,25 @@ OpenSSL 3.0.15 (libcrypto-3.dll) is licensed under the Apache License, Version 2
 - **Thay đổi so với bản gốc** (theo điều 4(b) của Apache-2.0): trọng số được chuyển từ safetensors (PyTorch) sang ONNX bằng [`dev/egret/export_onnx.py`](./dev/egret/export_onnx.py), đầu vào cố định 1×3×640×640, position embedding của encoder được tính sẵn thành hằng float32. Trọng số không bị huấn luyện lại hay chỉnh sửa giá trị.
 - Toàn văn giấy phép xem tại [`licenses/Apache-2.0.txt`](./licenses/Apache-2.0.txt).
 
-### 9. Docling — thuật toán hậu xử lý bố cục (MIT License)
+### 9. Docling — hậu xử lý bố cục, thứ tự đọc, ghép chú thích (MIT License)
 ```text
 Copyright The Docling Contributors
 Licensed under the MIT License.
 ```
-- Phần chọn khung hình sau khi chạy mô hình Egret (`_picture_rects` và các hàm, hằng số liên quan trong [`tools/src/figure_detector/egret.py`](./tools/src/figure_detector/egret.py)) được port từ lớp `LayoutPostprocessor` trong `docling/utils/layout_postprocessor.py` của dự án [Docling](https://github.com/docling-project/docling) (gói `docling-slim` 2.151.1): ngưỡng tin cậy theo nhãn, loại hình phủ trên 90% trang, gom khung chồng nhau và chọn khung tốt nhất, ưu tiên bảng khi trùng khung với hình.
+- Sau khi mô hình Egret chạy, mọi bước tiếp theo được port từ dự án [Docling](https://github.com/docling-project/docling) (gói `docling-slim` 2.151.1) vào [`tools/src/figure_detector/docling_layout.py`](./tools/src/figure_detector/docling_layout.py):
+  - `docling/utils/layout_postprocessor.py` (`LayoutPostprocessor`): ngưỡng tin cậy theo nhãn, gán dòng chữ vào vùng, tạo vùng cho chữ lẻ, gom khung chồng nhau, loại hình phủ trên 90% trang, ưu tiên bảng khi trùng khung với hình;
+  - `docling/models/postprocessing/reading_order_rb.py` (`ReadingOrderPredictor`): thứ tự đọc theo luật, ghép chú thích và chú thích cuối (footnote) với hình/bảng liền kề;
+  - `docling/models/stages/reading_order/readingorder_model.py` và `page_assemble/page_assemble_model.py`: sắp xếp phần tử trong vùng Form/Key-Value, ngưỡng 80% để coi ảnh nằm trong bảng, cách nối dòng chữ (`sanitize_text`);
+  - `docling/utils/text_normalization.py`: chuẩn hóa ký tự (dấu nháy, chữ ghép).
 - Toàn văn giấy phép xem tại [`licenses/docling-MIT.txt`](./licenses/docling-MIT.txt).
+
+### 10. docling-core — phép so khung `BoundingBox` (MIT License)
+```text
+Copyright (c) 2024 International Business Machines
+Licensed under the MIT License.
+```
+- Các phép so khung dùng trong thứ tự đọc (`overlaps_horizontally`, `is_strictly_above`, `overlaps_vertically_with_iou`…) được port từ `docling_core/types/doc/base.py` (gói `docling-core` 2.108.0) vào lớp `_Node` của [`tools/src/figure_detector/docling_layout.py`](./tools/src/figure_detector/docling_layout.py).
+- Toàn văn giấy phép xem tại [`licenses/docling-core-MIT.txt`](./licenses/docling-core-MIT.txt).
 
 ---
 
