@@ -4,7 +4,7 @@ Công cụ AI Agent tự động dịch tài liệu PDF từ tiếng Anh sang ti
 - Định dạng đầu vào: PDF, nên dưới 50 trang. Hình ảnh, biểu đồ được tìm bằng mô hình bố cục Egret (chạy ngay trên CPU của máy), nên **cả PDF scan cũng được tự động cắt hình**; riêng phần chữ của bản scan vẫn tốn thời gian hơn vì AI phải đọc từ ảnh trang.
 - Định dạng đầu ra mặc định: Bản dịch tiếng Việt trả về ở cả 2 định dạng đồng thời là HTML và PDF. Định dạng HTML thường có kết quả hiển thị tốt hơn.
 
-PS: Nếu file PDF bạn dùng là file tiêu chuẩn (không phải dạng scan), bạn có thể sử dụng phiên bản nhỏ gọn hơn của Max-Luka-Loop ở đây: https://github.com/kiencang/Luka-Loop
+PS: Nếu file PDF bạn hay dùng để dịch là file tiêu chuẩn (không phải dạng scan), bạn có thể sử dụng phiên bản nhỏ gọn hơn của Max-Luka-Loop ở đây: https://github.com/kiencang/Luka-Loop
 
 ## Cách dùng
 Rất đơn giản, bạn tải trực tiếp gói dựng sẵn mới nhất tại đây:
