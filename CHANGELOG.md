@@ -2,6 +2,11 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.1.3] - 2026-11-25
+### Changed
+- Bộ chuyển đổi Antigravity (`.agents\adapters\antigravity.md`): cập nhật bộ công cụ chính sang `read_file` / `write_file` (ưu tiên `Append: true` khi ghi nối dần) / `edit_file` / `run_command` (giữ chú thích tương thích ngược `view_file` / `write_to_file` / `replace_file_content`), khớp giới hạn đọc `800` dòng / `45 KB` (`46.080` bytes), chỉnh lại ghi chú về `StartLine`/`EndLine` ở lần mở đầu, bổ sung mục đọc PDF trực tiếp từ đĩa (Trường hợp 2), gợi ý `Artifact Directory Path`, xử lý lỗi sandbox/quyền truy cập ngoài workspace và quy tắc không tạo Artifact / `scratch\` khi dịch.
+- `AGENTS.md` và hai `SKILL.md`: bổ sung nhãn `App Data Directory` cùng `appDataDir` trong dấu hiệu nhận diện Antigravity và nhắc đọc `antigravity.md` cùng lượt mở `SKILL.md` (trước khi chạy lệnh Bước 1).
+
 ## [1.1.2] - 2026-11-22
 ### Changed
 - Auto-QA (`html_qa.py`): tách hàm kiểm tra thẻ mở `_process_start_tag` (212 dòng, 108 nhánh) thành các hàm nhỏ theo việc: cấu trúc, `<script>`, `<img>`, `<table>`, thuộc tính, và từng nhóm đường dẫn (`<a>`, `<link>`, `<img>`, `<script>`, còn lại). Mã lấy từ Luka-Loop (bản 1.1.22), nơi `html_qa.py` trước khi tách giống hệt bản ở đây. Không đổi quy tắc nào: bản cũ và bản mới cho trạng thái và kết luận giống hệt nhau trên HTML trong repo và 30.000 tài liệu sinh ngẫu nhiên.
