@@ -36,9 +36,12 @@ PS_HOST_PARAMS = {"NoProfile", "ExecutionPolicy", "File", "Command", "NonInterac
 ANTIGRAVITY_ONLY_TOKENS = (
     "view_file",
     "read_file",
+    "write_file",
     "StartLine",
     "EndLine",
+    "ByteOffset",
     "edit_file",
+    "run_command",
     "transcript.jsonl",
     ".system_generated",
     "\\brain\\",
@@ -237,6 +240,7 @@ class TestSkillContracts(unittest.TestCase):
                 linked = re.search(r"\]\([./]*(?:\.\./\.\./|\.agents/)adapters/antigravity\.md\)", text)
                 self.assertTrue(linked, "must link the Antigravity adapter")
                 self.assertTrue("`<user_information>`" in text, "must state the environment-detection signal")
+                self.assertTrue("`App Data Directory`" in text, "must state the environment-detection signal")
                 self.assertTrue("`appDataDir`" in text, "must state the environment-detection signal")
 
 
