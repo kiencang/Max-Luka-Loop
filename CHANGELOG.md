@@ -2,7 +2,7 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
-## [Unreleased]
+## [1.1.4] - 2026-11-27
 ### Security
 Port từ Luka-Loop v1.1.43 (mã đóng gói/QA của Max trước đó giống hệt Luka v1.1.42).
 - Khóa cứng đuôi tệp đầu ra (`tools/src/output_paths.py`: `prepare_sanitized_output_path`, `assert_expected_output_extension`): `-OutHtmlPath` (và `-HtmlPath` khi ghi tại chỗ) bắt buộc có đuôi `.html`, `-OutPdfPath` bắt buộc có đuôi `.pdf` (không phân biệt hoa/thường; từ chối tên chỉ có đuôi, dấu chấm cuối hay ký tự lạ trong đuôi trước khi làm sạch tên). Chặn việc lợi dụng lệnh đóng gói đã được cấp quyền sẵn để ghi tệp thực thi (`.bat`, `.cmd`, `.ps1`, `.hta`, `.exe`...).
