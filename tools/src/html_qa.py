@@ -6,6 +6,7 @@ import re
 from html.parser import HTMLParser
 from pathlib import Path
 
+from mathjax_guard import MATHJAX_LINK_GUARD_BODY
 from reader_shell import extract_trusted_shell_scripts, normalize_script_body
 
 _DATA_IMG_RX = re.compile(r"^data:image/(?:png|jpeg|jpg|webp|gif);base64,", re.IGNORECASE)
@@ -72,8 +73,21 @@ _CSS_URL_RX = re.compile(
 )
 _CSS_IMAGE_SET_RX = re.compile(r"""(?is)(?:-webkit-)?image-set\s*\(([^)]*)\)""")
 _CSS_QUOTED_STR_RX = re.compile(r"""(?:"([^"]*)"|'([^']*)')""")
-_LATEX_HREF_URL_RX = re.compile(r"""\\(?:href|url)\s*\{([^{}]*)\}""", re.IGNORECASE)
-_LATEX_STYLE_RX = re.compile(r"""\\style\s*\{([^{}]*)\}""", re.IGNORECASE)
+_MATHJAX_GUARD_NORM = normalize_script_body(MATHJAX_LINK_GUARD_BODY)
+_LATEX_ACTIVE_CMD_RX = re.compile(r"\\(href|url|style)(?![A-Za-z])")
+# Macro definitions are rejected outright: aliases, parameters (`#1`), defaults and delimited templates let a definition
+# hand `\href`/`\url`/`\style` a target the scanner cannot see without re-implementing MathJax's TeX parser. A PDF
+# carries no macros, so a translation writes its formulas in full and never needs one.
+_LATEX_MACRO_DEF_RX = re.compile(
+    r"\\(?:[egx]?def|newcommand|renewcommand|providecommand|DeclareRobustCommand|(?:re)?newenvironment"
+    r"|(?:future)?let|DeclarePairedDelimiter(?:X|XPP)?)(?![A-Za-z])"
+)
+# MathJax-only commands that write raw attributes or load code: `\mmlToken` sets `href`/`style` on a MathML node,
+# `\bbox[...]` passes raw CSS into `style`, and `\require` loads further packages (with their own definers).
+# Standard LaTeX never needs them (`\boxed{...}` frames a formula).
+_LATEX_BANNED_CMD_RX = re.compile(r"\\(?:mmlToken|bbox|require)(?![A-Za-z])")
+_LATEX_CONTROL_WORD_RX = re.compile(r"\\[A-Za-z]")
+_LATEX_SAFE_URL_ESCAPES_RX = re.compile(r"\\([#%&~_])")
 _LIGHTBOX_IDS = frozenset({"rsfv-img-lightbox", "img-lightbox"})
 _HTML_VOID_TAGS = frozenset(
     {
@@ -188,6 +202,63 @@ def _is_allowed_css_url(raw_url: str) -> bool:
     return False
 
 
+def _skip_tex_ws_and_comments(text: str, pos: int) -> int:
+    """Advance `pos` past whitespace and unescaped TeX `% ...\\n` comments.
+
+    U+FEFF counts as whitespace: MathJax skips JavaScript `\\s`, which includes it, while `str.isspace()` does not.
+    """
+    n = len(text)
+    i = pos
+    while i < n:
+        if text[i].isspace() or text[i] == "﻿":
+            i += 1
+        elif text[i] == "%":
+            nl = text.find("\n", i)
+            i = n if nl < 0 else nl + 1
+        else:
+            break
+    return i
+
+
+def _extract_tex_braced_arg(text: str, pos: int, *, tex_comments: bool = True) -> tuple[str, int] | None:
+    """Read a balanced `{...}` TeX argument at `pos` (after whitespace/comments), or None if absent/unclosed.
+
+    With `tex_comments=False`, `%` inside the braces is a literal character, which is how MathJax reads the
+    arguments of `\\href`, `\\url` and `\\style` (percent-encoded URLs such as `a%20b`).
+    """
+    n = len(text)
+    i = _skip_tex_ws_and_comments(text, pos)
+    if i >= n or text[i] != "{":
+        return None
+    depth = 1
+    i += 1
+    buf: list[str] = []
+    while i < n and depth > 0:
+        ch = text[i]
+        if ch == "\\" and i + 1 < n:
+            buf.append(ch)
+            buf.append(text[i + 1])
+            i += 2
+            continue
+        if ch == "%" and tex_comments:
+            nl = text.find("\n", i)
+            i = n if nl < 0 else nl + 1
+            continue
+        if ch == "{":
+            depth += 1
+            buf.append(ch)
+        elif ch == "}":
+            depth -= 1
+            if depth > 0:
+                buf.append(ch)
+        else:
+            buf.append(ch)
+        i += 1
+    if depth != 0:
+        return None
+    return "".join(buf), i
+
+
 def _format_sample_items(items: list[str], limit: int = 5) -> str:
     shown = ", ".join(items[:limit])
     if len(items) > limit:
@@ -209,6 +280,10 @@ class _QADOMScanner(HTMLParser):
         self._allow_external_images = allow_external_images
         self._open_stack: list[tuple[str, bool, str]] = []
         self._prose_buf: list[str] = []
+        # Every prose text node in document order, rescanned as one string at close(): browsers and MathJax join
+        # text across <wbr>, <br>, HTML comments and ignored stray tags (e.g. `\hr<wbr>ef{...}` or an unmatched
+        # `</span>`), which this per-node scanner would otherwise see as separate pieces.
+        self._all_prose: list[str] = []
         self._active_script: dict[str, object] | None = None
         self._style_buf: list[str] = []
         self.has_head_open = False
@@ -227,6 +302,9 @@ class _QADOMScanner(HTMLParser):
         self.has_latex = False
         self.has_mathjax_in_head = False
         self.mathjax_srcs: list[str] = []
+        # The MathJax link guard (mathjax_guard.py) only works when it runs before MathJax loads.
+        self._mathjax_guard_seen = False
+        self.mathjax_without_guard = False
         # Open <svg>/<math> counted by explicit start/end tags only (not the implied-close stack), so the
         # scanner never believes foreign content ended while the browser still considers it open.
         self._foreign_depth: dict[str, int] = {name: 0 for name in _FOREIGN_CONTENT_ROOTS}
@@ -241,6 +319,10 @@ class _QADOMScanner(HTMLParser):
         self._seen_handlers: set[str] = set()
         self.dangerous_uris: list[str] = []
         self._seen_uris: set[str] = set()
+        self.latex_macro_defs: list[str] = []
+        self._seen_macro_defs: set[str] = set()
+        self.latex_banned_cmds: list[str] = []
+        self._seen_banned_cmds: set[str] = set()
         self.disallowed_external_resources: list[str] = []
         self._seen_ext_res: set[str] = set()
 
@@ -264,24 +346,66 @@ class _QADOMScanner(HTMLParser):
             return
         chunk = "".join(self._prose_buf)
         self._prose_buf.clear()
+        self._all_prose.append(chunk)
         if not self.has_latex and (r"\(" in chunk or r"\[" in chunk):
             self.has_latex = True
-        if "\\" in chunk:
-            for m in _LATEX_HREF_URL_RX.finditer(chunk):
-                raw_target = _STRIP_CTRL_WS_RX.sub("", m.group(1) or "")
-                if raw_target and not (
-                    raw_target.startswith("#") or _SAFE_LINK_SCHEME_RX.match(raw_target)
-                ):
+        self._scan_latex_text(chunk)
+
+    def _scan_latex_text(self, chunk: str) -> None:
+        if "\\" not in chunk:
+            return
+        for dm in _LATEX_MACRO_DEF_RX.finditer(chunk):
+            self._add_issue(self.latex_macro_defs, self._seen_macro_defs, dm.group(0))
+        for bm in _LATEX_BANNED_CMD_RX.finditer(chunk):
+            self._add_issue(self.latex_banned_cmds, self._seen_banned_cmds, bm.group(0))
+        if _LATEX_ACTIVE_CMD_RX.search(chunk):
+            self._scan_latex_active_commands(chunk)
+
+    def _scan_latex_active_commands(self, chunk: str) -> None:
+        """Validate `\\href`, `\\url`, and `\\style` arguments with balanced braces (macro definitions are rejected)."""
+        for m in _LATEX_ACTIVE_CMD_RX.finditer(chunk):
+            cmd = m.group(1).lower()
+            parsed = _extract_tex_braced_arg(chunk, m.end(), tex_comments=False)
+            if parsed is None:
+                if cmd == "style":
+                    self._add_issue(
+                        self.disallowed_external_resources,
+                        self._seen_ext_res,
+                        "LaTeX \\style (missing or unbraced argument)",
+                    )
+                else:
                     self._add_issue(
                         self.dangerous_uris,
                         self._seen_uris,
-                        f'LaTeX \\href{{{raw_target[:60]}}}',
+                        f"LaTeX \\{cmd} (missing or unbraced argument)",
                     )
-            for m in _LATEX_STYLE_RX.finditer(chunk):
-                css_payload = m.group(1) or ""
-                if css_payload:
-                    self._scan_css_text(css_payload, source="LaTeX \\style")
-                    if "expression(" in _STRIP_CTRL_WS_RX.sub("", css_payload).lower():
+                continue
+
+            arg, _ = parsed
+            if cmd in ("href", "url"):
+                unescaped = _LATEX_SAFE_URL_ESCAPES_RX.sub(r"\1", arg)
+                raw_target = _STRIP_CTRL_WS_RX.sub("", unescaped)
+                if (
+                    not raw_target
+                    or "\\" in raw_target
+                    or not (raw_target.startswith("#") or _SAFE_LINK_SCHEME_RX.match(raw_target))
+                ):
+                    shown = _STRIP_CTRL_WS_RX.sub("", arg)[:60]
+                    self._add_issue(
+                        self.dangerous_uris,
+                        self._seen_uris,
+                        f"LaTeX \\{cmd}{{{shown}}}",
+                    )
+            else:
+                if _LATEX_CONTROL_WORD_RX.search(arg):
+                    self._add_issue(
+                        self.disallowed_external_resources,
+                        self._seen_ext_res,
+                        f"LaTeX \\style{{{arg.strip()[:60]}}}",
+                    )
+                if arg:
+                    self._scan_css_text(arg, source="LaTeX \\style")
+                    if "expression(" in _STRIP_CTRL_WS_RX.sub("", arg).lower():
                         self._add_issue(
                             self.disallowed_external_resources,
                             self._seen_ext_res,
@@ -346,6 +470,8 @@ class _QADOMScanner(HTMLParser):
             cleaned_src = str(src_val).strip()
             if in_head and not body_norm and _ALLOWED_MATHJAX_SRC_RX.match(cleaned_src):
                 self.has_mathjax_in_head = True
+                if not self._mathjax_guard_seen:
+                    self.mathjax_without_guard = True
                 if cleaned_src not in self.mathjax_srcs:
                     self.mathjax_srcs.append(cleaned_src)
                 return
@@ -355,6 +481,8 @@ class _QADOMScanner(HTMLParser):
 
         if body_norm and body_norm in self._allowed_inline_scripts:
             self.allowed_inline_script_raw_bodies.append(raw_body)
+            if in_head and body_norm == _MATHJAX_GUARD_NORM:
+                self._mathjax_guard_seen = True
             return
 
         snippet = (body_norm[:40] + "...") if len(body_norm) > 40 else (body_norm or "<empty>")
@@ -643,6 +771,8 @@ class _QADOMScanner(HTMLParser):
 
     def close(self) -> None:
         self._flush_prose()
+        if len(self._all_prose) > 1:
+            self._scan_latex_text("".join(self._all_prose))
         self._finalize_active_script()
         self._finalize_style_block()
         super().close()
@@ -655,8 +785,13 @@ def run_html_qa_check(
     allowed_inline_scripts: frozenset[str] | None = None,
     shell_path: Path | None = None,
     allow_external_images: bool = False,
+    require_mathjax_guard: bool = False,
 ) -> _QADOMScanner:
-    """Validate structure, security policy, Base64 images, alt tags, .table-wrapper nesting, MathJax, and anchors."""
+    """Validate structure, security policy, Base64 images, alt tags, .table-wrapper nesting, MathJax, and anchors.
+
+    The fixed MathJax link guard script is always allowed; `require_mathjax_guard` (set by the packager, which
+    injects it) also demands that it precedes every MathJax <script>.
+    """
     if allowed_inline_scripts is None:
         allowed_scripts = (
             frozenset()
@@ -665,6 +800,7 @@ def run_html_qa_check(
         )
     else:
         allowed_scripts = allowed_inline_scripts
+    allowed_scripts = allowed_scripts | {_MATHJAX_GUARD_NORM}
 
     scanner = _QADOMScanner(
         allowed_inline_scripts=allowed_scripts,
@@ -701,6 +837,18 @@ def run_html_qa_check(
         )
     if scanner.dangerous_uris:
         issues.append(f"Disallowed dangerous URI(s): {_format_sample_items(scanner.dangerous_uris)}")
+    if scanner.latex_macro_defs:
+        issues.append(
+            "Disallowed LaTeX macro definition(s) (write formulas in full without defining macros; "
+            "put LaTeX command names mentioned in prose inside <code>): "
+            f"{_format_sample_items(scanner.latex_macro_defs)}"
+        )
+    if scanner.latex_banned_cmds:
+        issues.append(
+            "Disallowed MathJax-only LaTeX command(s) (use standard LaTeX, e.g. \\boxed{...} instead of \\bbox; "
+            "put LaTeX command names mentioned in prose inside <code>): "
+            f"{_format_sample_items(scanner.latex_banned_cmds)}"
+        )
     if scanner.external_img_srcs:
         issues.append(
             f"Disallowed external <img> URL(s) (images must be local Base64 assets): "
@@ -726,6 +874,8 @@ def run_html_qa_check(
 
     if scanner.has_latex and not scanner.has_mathjax_in_head:
         issues.append("Detected LaTeX math delimiters without MathJax <script> in <head>.")
+    if require_mathjax_guard and scanner.mathjax_without_guard:
+        issues.append("MathJax <script> is not preceded by the Max-Luka-Loop MathJax link guard <script> in <head>.")
 
     broken_anchors: list[str] = []
     seen_broken: set[str] = set()

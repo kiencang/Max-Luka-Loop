@@ -29,6 +29,8 @@ _PAGE_RANGE_RE = re.compile(r"^(\d+)-(\d+)$")
 _INVALID_FILENAME_CHARS = set('<>:"/\\|?*')
 
 # Resource-exhaustion & decompression-bomb limits
+MAX_PDF_PAGES = 300  # max pages per PDF document (0 disables in Python dev calls)
+MAX_EXTRACTED_FIGURES = 1000  # max figures rendered per PDF document (0 disables in Python dev calls)
 MAX_RENDER_DIM = 6000
 MAX_RENDER_PIXELS = 25_000_000  # 25 MP (~75 MB RGB Pixmap)
 MAX_IMAGE_FILE_BYTES = 50 * 1024 * 1024  # 50 MB per image file
@@ -232,7 +234,12 @@ def _parse_page_list(raw_pages: str, total_pages: int) -> list[int]:
 
 
 def render_pages(
-    pdf_path: Path, out_dir: Path, scale: float = 2.5, pages: str = ""
+    pdf_path: Path,
+    out_dir: Path,
+    scale: float = 2.5,
+    pages: str = "",
+    *,
+    max_pages: int = MAX_PDF_PAGES,
 ) -> list[Path]:
     """Render selected PDF pages to opaque white-background PNGs (`page_1.png`, ...)."""
     pm = ensure_pymupdf()
@@ -242,13 +249,19 @@ def render_pages(
     if not math.isfinite(scale) or scale < 0.5 or scale > 10.0:
         raise ValueError(f"RenderScale out of safe range (0.5..10.0): {scale}")
 
-    safe_out_dir = resolve_safe_out_directory(out_dir, "-OutDir", create=True)
+    safe_out_dir = resolve_safe_out_directory(out_dir, "-OutDir", create=False)
     saved: list[Path] = []
     with pm.open(pdf_path) as doc:
         if doc.needs_pass:
             raise RuntimeError(f"PDF is password-protected/encrypted and cannot be rendered: {pdf_path}")
         total_pages = len(doc)
+        if max_pages > 0 and total_pages > max_pages:
+            raise ValueError(
+                f"PDF has {total_pages:,} pages, exceeding the {max_pages:,}-page safety limit: {pdf_path} "
+                f"(split the PDF into smaller parts/chapters before translating)."
+            )
         target_pages = _parse_page_list(pages, total_pages)
+        safe_out_dir.mkdir(parents=True, exist_ok=True)
 
         for pno in target_pages:
             page = doc[pno - 1]

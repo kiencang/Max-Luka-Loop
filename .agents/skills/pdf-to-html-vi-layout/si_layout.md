@@ -210,6 +210,7 @@ pre code { background: transparent; padding: 0; }
      <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
      ```
    - Block math đặt trong `<div style="text-align: center; margin: 12px 0; break-inside: avoid;">\[ ... \]</div>`; chừa khoảng trắng quanh `<` và `>` trong LaTeX (`\( x < y \)`); **không** bọc LaTeX trong `<code>` hay `<pre>`.
+   - **KHÔNG** định nghĩa macro LaTeX (`\newcommand`, `\renewcommand`, `\def`, `\let`, `\newenvironment`...): viết công thức đầy đủ (vd `\mathbb{R}`, không đặt `\R`) — Auto-QA từ chối mọi định nghĩa macro, cùng các lệnh riêng của MathJax `\mmlToken`, `\bbox` (đóng khung công thức dùng `\boxed{...}`) và `\require`; khi câu văn nhắc tên một lệnh LaTeX (vd `\url`), đặt tên lệnh đó trong `<code>`.
 7. **Chuyển hóa sạch Tag trung gian & Liên kết `References`:**
    - Thay thế trọn vẹn mọi tag tạm từ `work\translated.md` (`<!-- p:N -->`, `<!-- cont -->`, `[HEADER]`, `[FOOTER]`, `[FIG:]`, `[TBL-IMG:]`, `[DIAGRAM-A]`, `[CALLOUT]`, `[FN]`) bằng cấu trúc HTML/CSS tương ứng — **tuyệt đối không để sót tag thô trong `work\draft.html`**.
    - Với `References` / `Bibliography`: giữ nguyên phần nhận diện không dịch kèm định dạng in đậm/nghiêng gốc, dùng `ul.ref-list` nếu bản gốc thụt lề ngược (*hanging indent*), và chuyển mọi **URL / DOI** thành liên kết `<a href="..." target="_blank" rel="noopener">` nhấp được.

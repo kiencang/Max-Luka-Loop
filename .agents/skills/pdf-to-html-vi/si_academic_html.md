@@ -239,6 +239,7 @@ h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; line-heigh
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     ```
   - Dùng `\( ... \)` cho inline math và `\[ ... \]` cho block math; dùng môi trường LaTeX (`\begin{bmatrix}...\end{bmatrix}`) cho ma trận — **TUYỆT ĐỐI KHÔNG** dùng `<sup>`/`<sub>` hay `<table>` giả lập công thức/ma trận, **KHÔNG** bọc LaTeX trong `<code>` hay `<pre>`.
+  - **KHÔNG** định nghĩa macro LaTeX (`\newcommand`, `\renewcommand`, `\def`, `\let`, `\newenvironment`...): viết công thức đầy đủ (vd `\mathbb{R}`, không đặt `\R`) — Auto-QA từ chối mọi định nghĩa macro, cùng các lệnh riêng của MathJax `\mmlToken`, `\bbox` (đóng khung công thức dùng `\boxed{...}`) và `\require`; khi câu văn nhắc tên một lệnh LaTeX (vd `\url`), đặt tên lệnh đó trong `<code>`.
   - **Chừa khoảng trắng quanh `<` và `>` trong LaTeX (`\( x < y \)`)** để trình phân tích HTML không nhận nhầm thành thẻ HTML làm mất biến toán. Dịch điều kiện chữ tiếng Anh bên trong công thức và bọc bằng `\text{...}` (`\( \{n : n \text{ là số nguyên tố}\} \)`), và **giữ nguyên dấu chấm (`.`)** cho số thập phân trong LaTeX.
 
 ### 4.5 Tài liệu Tham khảo (`References` / `Bibliography`)

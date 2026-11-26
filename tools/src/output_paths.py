@@ -15,8 +15,34 @@ from path_guards import (
 )
 
 
-def prepare_sanitized_output_path(raw_path_str: str, label: str) -> Path:
-    """Reject path-level attacks (UNC, non-FS, NTFS ADS, symlinks) while auto-sanitizing unsafe filenames."""
+_EXPECTED_EXT_BY_LABEL: dict[str, str] = {
+    "-OutHtmlPath": ".html",
+    "-OutPdfPath": ".pdf",
+}
+
+
+def assert_expected_output_extension(
+    path: Path | str,
+    expected_ext: str,
+    label: str,
+    *,
+    raw_display: str = "",
+) -> None:
+    """Reject output paths whose filename stem is empty or whose extension does not match `expected_ext`."""
+    ext = expected_ext.lower()
+    p = Path(path)
+    shown = raw_display or str(path)
+    if not p.name or not p.stem or p.suffix.lower() != ext:
+        raise ValueError(f"Refusing invalid output file extension for {label} (expected '{ext}'): {shown}")
+
+
+def prepare_sanitized_output_path(
+    raw_path_str: str,
+    label: str,
+    *,
+    expected_ext: str | None = None,
+) -> Path:
+    """Reject path-level attacks (UNC, non-FS, NTFS ADS, symlinks, wrong extension) while auto-sanitizing unsafe filenames."""
     raw = raw_path_str.strip()
     if re.match(r"^[A-Za-z0-9_.-]+::", raw) and not raw.lower().startswith("filesystem::"):
         raise ValueError(f"Refusing non-filesystem path for {label}: {raw}")
@@ -24,10 +50,16 @@ def prepare_sanitized_output_path(raw_path_str: str, label: str) -> Path:
         raise ValueError(f"Refusing non-filesystem path for {label}: {raw}")
     assert_local_no_unc_path(raw, label)
 
+    req_ext = _EXPECTED_EXT_BY_LABEL.get(label, "") if expected_ext is None else expected_ext
     parent_str, leaf_str = os.path.split(raw)
+    if req_ext:
+        assert_expected_output_extension(leaf_str, req_ext, label, raw_display=raw)
+
     abs_parent = Path(os.path.abspath(parent_str)) if parent_str else Path(os.path.abspath("."))
     cand = abs_parent / leaf_str
     sanitized, changed = sanitize_output_filename(cand)
+    if req_ext:
+        assert_expected_output_extension(sanitized, req_ext, label, raw_display=raw)
     if changed:
         print(f"Sanitized unsafe output filename -> {sanitized}")
     dest = assert_safe_output_path(sanitized, label=label, is_directory=False)

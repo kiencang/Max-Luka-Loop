@@ -2,6 +2,18 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [Unreleased]
+### Security
+Port từ Luka-Loop v1.1.43 (mã đóng gói/QA của Max trước đó giống hệt Luka v1.1.42).
+- Khóa cứng đuôi tệp đầu ra (`tools/src/output_paths.py`: `prepare_sanitized_output_path`, `assert_expected_output_extension`): `-OutHtmlPath` (và `-HtmlPath` khi ghi tại chỗ) bắt buộc có đuôi `.html`, `-OutPdfPath` bắt buộc có đuôi `.pdf` (không phân biệt hoa/thường; từ chối tên chỉ có đuôi, dấu chấm cuối hay ký tự lạ trong đuôi trước khi làm sạch tên). Chặn việc lợi dụng lệnh đóng gói đã được cấp quyền sẵn để ghi tệp thực thi (`.bat`, `.cmd`, `.ps1`, `.hta`, `.exe`...).
+- Trần an toàn cho PDF quá lớn: `extract_images` (`tools/src/figure_detector/extract.py`, cả Egret lẫn heuristic) và `render_pages` (`tools/src/image_ops.py`) từ chối PDF quá `MAX_PDF_PAGES = 300` trang ngay khi mở tài liệu (trước khi chạy mô hình trên trang nào hay tạo thư mục), và dừng khi vượt `MAX_EXTRACTED_FIGURES = 1000` hình (dọn sạch ảnh PNG dở dang). Gọi từ Python có thể truyền `max_pages=0` / `max_figures=0` để bỏ giới hạn. Kết quả tách hình không đổi. Hai `SKILL.md` và `README.md` ghi rõ giới hạn và dặn agent dừng, hướng dẫn người dùng tách PDF.
+- Gia cố kiểm tra LaTeX trong `tools/src/html_qa.py`:
+  - đọc đối số `\href`, `\url`, `\style` theo ngoặc nhọn cân bằng `{...}`, coi `%` trong đối số là ký tự thường như MathJax (URL mã hóa phần trăm `a%20b` hợp lệ), và bắt buộc có đối số `{...}` ngay sau lệnh;
+  - **cấm mọi định nghĩa macro LaTeX** (`\def`, `\edef`, `\gdef`, `\xdef`, `\newcommand`, `\renewcommand`, `\providecommand`, `\DeclareRobustCommand`, `\newenvironment`, `\renewenvironment`, `\let`, `\futurelet`, `\DeclarePairedDelimiter`/`X`/`XPP`) cùng các lệnh riêng của MathJax `\mmlToken`, `\bbox` (đóng khung dùng `\boxed{...}`) và `\require`, vì macro cho phép giấu đích liên kết khỏi bộ kiểm tra; bản dịch từ PDF không cần macro (thêm dòng dặn vào `si_academic_html.md` và `si_layout.md`);
+  - coi `U+FEFF` là khoảng trắng như MathJax, và quét lại toàn bộ chữ của trang nối liền để bắt lệnh bị tách qua `<wbr>`, comment HTML hay thẻ lạc (`\hr<wbr>ef{...}`);
+  - nhắc tên lệnh LaTeX trong câu văn (vd `\url`) phải đặt trong `<code>`.
+- Lớp chặn lúc hiển thị cho liên kết trong công thức (`tools/src/mathjax_guard.py`): khi trang có MathJax, `embed_images_and_package` tự chèn ngay trước thẻ MathJax (cả chế độ thường lẫn `-PreserveLayout`) một script cấu hình cố định dùng `renderActions` của MathJax để gỡ mọi `href` không phải `http(s):`/`mailto:`/`#` sau khi công thức được dựng, ở cả trang HTML lẫn bản PDF. Auto-QA cho phép đúng script này (CSP tự thêm mã băm SHA-256) và khi đóng gói bắt buộc nó đứng trước thẻ MathJax. Không dùng `ui/safe` của MathJax vì nó để lọt `search-ms:`/`ms-settings:` (có dấu gạch ngang) và mặc định cho phép `file:`.
+
 ## [1.1.3] - 2026-11-25
 ### Changed
 - Bộ chuyển đổi Antigravity (`.agents\adapters\antigravity.md`): cập nhật bộ công cụ chính sang `read_file` / `write_file` (ưu tiên `Append: true` khi ghi nối dần) / `edit_file` / `run_command` (giữ chú thích tương thích ngược `view_file` / `write_to_file` / `replace_file_content`), khớp giới hạn đọc `800` dòng / `45 KB` (`46.080` bytes), chỉnh lại ghi chú về `StartLine`/`EndLine` ở lần mở đầu, bổ sung mục đọc PDF trực tiếp từ đĩa (Trường hợp 2), gợi ý `Artifact Directory Path`, xử lý lỗi sandbox/quyền truy cập ngoài workspace và quy tắc không tạo Artifact / `scratch\` khi dịch.

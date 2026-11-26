@@ -1,7 +1,7 @@
 # Max Luka Loop
 Công cụ AI Agent tự động dịch tài liệu PDF từ tiếng Anh sang tiếng Việt. Không yêu cầu cài thêm bất cứ phần mềm (ngoài công cụ này và phần mềm desktop Agent mà bạn hay dùng) hỗ trợ nào. Chỉ cần mở thư mục trên các agent như [Antigravity](https://antigravity.google/), [Claude Code](https://claude.com/product/claude-code) là bắt đầu dùng được ngay. Một số agent khác mà bạn có thể thử là [Cursor](https://cursor.com/) và [Goose](https://goose-docs.ai/).
 
-- Định dạng đầu vào: PDF, nên dưới 50 trang. Ở phiên bản này, ngay cả **PDF scan cũng được tự động cắt hình**, đây là điểm mạnh nhất của công cụ so với phiên bản nhỏ gọn hơn của nó.
+- Định dạng đầu vào: PDF, nên dưới 50 trang (giới hạn an toàn tối đa **300 trang** và **1.000 hình** cho mỗi tệp PDF; với sách hoặc tài liệu dài hơn, hãy tách nhỏ theo chương/phần trước khi dịch). Ở phiên bản này, ngay cả **PDF scan cũng được tự động cắt hình**, đây là điểm mạnh nhất của công cụ so với phiên bản nhỏ gọn hơn của nó.
 - Định dạng đầu ra mặc định: Bản dịch tiếng Việt trả về ở cả 2 định dạng đồng thời là HTML và PDF. Định dạng HTML thường có kết quả hiển thị tốt hơn.
 
 PS: Nếu file PDF bạn hay dùng để dịch là file tiêu chuẩn (không phải dạng scan), bạn có thể sử dụng phiên bản nhỏ gọn hơn của Max-Luka-Loop ở đây: https://github.com/kiencang/Luka-Loop

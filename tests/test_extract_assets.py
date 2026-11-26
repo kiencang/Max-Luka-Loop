@@ -5,6 +5,8 @@ CLI parsing and dispatch of extract_assets.py itself are covered by test_cli.py.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
 import subprocess
@@ -24,6 +26,7 @@ import figure_detector as fd  # noqa: E402
 import html_qa as qa  # noqa: E402
 import image_ops as iops  # noqa: E402
 import manifest as mf  # noqa: E402
+import mathjax_guard as mjg  # noqa: E402
 import packager as pkg  # noqa: E402
 import path_guards as pg  # noqa: E402
 import pdf_export as pdfx  # noqa: E402
@@ -1317,6 +1320,80 @@ class TestPathGuardsModule(unittest.TestCase):
         self.assertEqual(res_html.name, "doc_CON.html")
         self.assertTrue(res_html.is_file())
 
+        # 5. Output extension lock: -OutHtmlPath requires .html (and in-place -HtmlPath requires .html); -OutPdfPath requires .pdf
+        import output_paths as opaths
+
+        for bad_html_out in (
+            out_dir / "payload.bat",
+            out_dir / "payload.cmd",
+            out_dir / "payload.ps1",
+            out_dir / "payload.hta",
+            out_dir / "payload.htm",
+            out_dir / "payload.pdf",
+            out_dir / "payload",
+            out_dir / ".html",
+            str(out_dir / "payload.html."),
+            str(out_dir / "payload.ht$ml"),
+        ):
+            with self.subTest(bad_html_out=str(bad_html_out)):
+                with self.assertRaisesRegex(ValueError, r"Refusing invalid output file extension for -OutHtmlPath \(expected '\.html'\)"):
+                    opaths.prepare_sanitized_output_path(str(bad_html_out), label="-OutHtmlPath")
+                with self.assertRaisesRegex(ValueError, r"Refusing invalid output file extension for -OutHtmlPath \(expected '\.html'\)"):
+                    pkg.embed_images_and_package(
+                        html_path=draft,
+                        optimize_image_bytes_fn=iops._optimize_image_bytes,
+                        out_html_path=str(bad_html_out),
+                        preserve_layout=True,
+                    )
+
+        for bad_pdf_out in (
+            out_dir / "payload.bat",
+            out_dir / "payload.exe",
+            out_dir / "payload.html",
+            out_dir / "payload",
+            out_dir / ".pdf",
+            str(out_dir / "payload.pdf."),
+            str(out_dir / "payload.pd*f"),
+        ):
+            with self.subTest(bad_pdf_out=str(bad_pdf_out)):
+                with self.assertRaisesRegex(ValueError, r"Refusing invalid output file extension for -OutPdfPath \(expected '\.pdf'\)"):
+                    opaths.prepare_sanitized_output_path(str(bad_pdf_out), label="-OutPdfPath")
+                with self.assertRaisesRegex(ValueError, r"Refusing invalid output file extension for -OutPdfPath \(expected '\.pdf'\)"):
+                    pkg.embed_images_and_package(
+                        html_path=draft,
+                        optimize_image_bytes_fn=iops._optimize_image_bytes,
+                        out_html_path=str(out_dir / "ok.html"),
+                        out_pdf_path=str(bad_pdf_out),
+                        preserve_layout=True,
+                    )
+                with self.assertRaisesRegex(ValueError, r"Refusing invalid output file extension for -OutPdfPath \(expected '\.pdf'\)"):
+                    pdfx.html_to_pdf(draft, out_pdf_path=str(bad_pdf_out))
+        self.assertFalse((out_dir / "ok.html").exists(), "rejected -OutPdfPath must fail before writing HTML output")
+
+        # Case-insensitive .HTML / .PDF are accepted
+        upper_html, _ = pkg.embed_images_and_package(
+            html_path=draft,
+            optimize_image_bytes_fn=iops._optimize_image_bytes,
+            out_html_path=str(out_dir / "UPPER_NAME.HTML"),
+            preserve_layout=True,
+        )
+        self.assertEqual(upper_html.name, "UPPER_NAME.HTML")
+        self.assertEqual(
+            opaths.prepare_sanitized_output_path(str(out_dir / "UPPER_NAME.PDF"), label="-OutPdfPath").name,
+            "UPPER_NAME.PDF",
+        )
+
+        # In-place mode (empty out_html_path) also refuses non-.html input files
+        non_html_draft = self.tmp_dir / "sneaky.bat"
+        non_html_draft.write_text("<!DOCTYPE html><html><head><title>S</title></head><body><p>OK</p></body></html>", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, r"Refusing invalid output file extension for -HtmlPath \(expected '\.html'\)"):
+            pkg.embed_images_and_package(
+                html_path=non_html_draft,
+                optimize_image_bytes_fn=iops._optimize_image_bytes,
+                out_html_path="",
+                preserve_layout=True,
+            )
+
 
 class TestHtmlPackagerCoreAndTranscript(unittest.TestCase):
     def setUp(self) -> None:
@@ -1804,7 +1881,15 @@ class TestHtmlPackagerCoreAndTranscript(unittest.TestCase):
             '<a href="#sec1">Jump</a> '
             '<a href="https://doi.org/10.1000/xyz">DOI</a> '
             '<a href="mailto:author@example.org">Email</a>'
-            r'<p>\( x = 1 \) and \( \href{https://doi.org/10.1000/1}{ref} + \style{color:red}{y} \)</p>'
+            r'<p>\( x = 1 \) and \( x \in \mathbb{R}, \left\|v\right\| \)</p>'
+            r'<p>\( \href{https://doi.org/10.1000/1\#sec}{ref} + \style{color:#0369a1}{y} \)</p>'
+            r'<p>\( \href{https://example.org/a%20b?q=%7Euser}{ref} + \url{https://example.org/50%} \)</p>'
+            r'<p>Trong LaTeX, lệnh <code>\url</code> và lệnh <code>\href</code> dùng để chèn liên kết.</p>'
+            r'<p>\( \frac{a}{b} + \left(x, y\right) + \operatorname{arg\,max} + \boxed{E = mc^2} \href{https://example.org/doc}{doc} \)</p>'
+            r'<p>Lệnh <code>\newcommand</code> và <code>\def</code> định nghĩa macro; các chữ \define, \letter, \default thì không.</p>'
+            r'<p>Ta có \( x = 1 \), xem điều kiện #1</p>'
+            r'<p>Xem mục #1 <strong>ngay</strong>.</p>'
+            r'<table><tr><td>#1</td><td>{a, b}</td></tr></table>'
             '<svg><defs><circle id="dot" r="2"/></defs><use href="#dot"/></svg>'
             "</body></html>"
         )
@@ -1880,6 +1965,231 @@ class TestHtmlPackagerCoreAndTranscript(unittest.TestCase):
                 r'<body><p>\( \style{background:url(https://evil.example/leak)}{x} \)</p></body></html>',
                 r"Disallowed external resource reference\(s\).*LaTeX \\style",
             ),
+            (
+                "LaTeX \\href nested braces Windows protocol bypass",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \href{ms-settings:display#{a}}{Click} \)</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href\{ms-settings:display#\{a\}\}",
+            ),
+            (
+                "LaTeX \\def alias for \\href",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\h{\href} \h{search-ms:query=secret}{Click} \)</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href",
+            ),
+            (
+                "LaTeX \\let alias for \\href",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \let\h=\href \h{search-ms:query=secret}{Click} \)</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href",
+            ),
+            (
+                "LaTeX \\let alias with trailing decoy https brace",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \let\h=\href{https://example.org}{ok} \h{search-ms:query=secret}{Click} \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX unbraced \\newcommand alias with decoy https brace",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \newcommand{\h}\href{https://example.org}{ok} \h{search-ms:query=secret}{Click} \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX \\def parameterized wrapper around \\href{#1}",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\h#1{\href{#1}} \h{search-ms:query=secret}{Click} \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX \\href with macro-expanded URL \\u",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\u{search-ms:query=secret} \href{\u}{Click} \)</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href\{\\u\}",
+            ),
+            (
+                "LaTeX \\href with TeX % comment before brace",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                "<body><p>\\( \\href % comment\n {search-ms:query=secret}{Click} \\)</p></body></html>",
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href\{search-ms:query=secret\}",
+            ),
+            (
+                "LaTeX \\href argument split into the next HTML text node",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \href <span>{search-ms:query=secret}{Click}</span> \)</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href \(missing or unbraced argument\)",
+            ),
+            *[
+                (
+                    f"LaTeX \\href with invisible U+{ord(ch):04X} before the brace",
+                    '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                    + r"<body><p>\( \href" + ch + r"{search-ms:query=secret}{Click} \)</p></body></html>",
+                    r"Disallowed dangerous URI\(s\).*LaTeX \\href",
+                )
+                for ch in ("﻿", "​", " ", " ")
+            ],
+            (
+                "LaTeX \\href passed into #1 of a wrapper, plain trailing character",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\foo#1{#1{search-ms:query=secret}{Click}} \foo\href x \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX #1{...} wrapper defined in an earlier paragraph",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\foo#1{#1{search-ms:query=secret}{Click}} \)</p><p>\( \foo\href x \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX #1{...} wrapper fed a braced decoy https URL",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\foo#1{#1{search-ms:query=secret}{Click}} \foo\href{https://ok.example}{x} \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX ##1{...} in a nested definition after an escaped line break",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\a{\def\b##1{\\##1{search-ms:q}{C}}} \a \b\href x \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX \\let alias hidden behind U+FEFF",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                + r"<body><p>\( \let\h=" + "﻿" + r"\href x \h{search-ms:query=secret}{Click} \)</p></body></html>",
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX unbraced \\newcommand alias hidden behind U+FEFF",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                + r"<body><p>\( \newcommand{\h}" + "﻿" + r"\href x \h{search-ms:query=secret}{Click} \)</p></body></html>",
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            *[
+                (
+                    f"LaTeX \\href name split by {label}",
+                    '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                    + r"<body><p>\( \hr" + splitter + r"ef{search-ms:query=secret}{Click} \)</p></body></html>",
+                    r"Disallowed dangerous URI\(s\).*LaTeX \\href\{search-ms:query=secret\}",
+                )
+                for label, splitter in (
+                    ("<wbr>", "<wbr>"),
+                    ("an HTML comment", "<!-- -->"),
+                    ("a stray </span>", "</span>"),
+                    ("a stray <body>", "<body>"),
+                )
+            ],
+            (
+                "LaTeX #1{...} wrapper split by an HTML comment",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\foo#1{#<!-- -->1{search-ms:query=secret}{Click}} \foo\href x \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            *[
+                (
+                    f"LaTeX parameter swap feeding a double-braced URL ({label})",
+                    '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                    + r"<body><p>\( " + definition + r" \foo{{search-ms:query=secret}}\href{https://ok.example}{y} \)</p></body></html>",
+                    r"Disallowed LaTeX macro definition\(s\)",
+                )
+                for label, definition in (
+                    ("\\def #2#1", r"\def\foo#1#2{#2#1}"),
+                    ("\\newcommand #2 #1", r"\newcommand{\foo}[2]{#2 #1}"),
+                )
+            ],
+            (
+                "LaTeX #1% comment hides the rest of the line",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                "<body><p>\\( \\def\\foo#1{#1%} \\foo\\href{https://ok.example}{y}\n{search-ms:query=secret}{C} \\)</p></body></html>",
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX \\newenvironment begin code applying #1{...}",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r"<body><p>\( \newenvironment{e}[1]{#1{search-ms:query=secret}{C}}{} \begin{e}\href{https://ok.example}{y}\end{e} \)</p></body></html>",
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            (
+                "LaTeX \\def with a delimited template before the body",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r"<body><p>\( \def\foo#1\x{#1{search-ms:query=secret}{C}} \foo\href{https://ok.example}\x \)</p></body></html>",
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            *[
+                (
+                    f"LaTeX \\href{{#1}} wrapper behind a {label} template delimiter",
+                    '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                    + r"<body><p>\( \def\h#1" + delim + r"{\href{#1}} \h{search-ms:query=secret}" + delim + r"{Click} \)</p></body></html>",
+                    r"Disallowed LaTeX macro definition\(s\)",
+                )
+                for label, delim in (("control-word", r"\x"), ("escaped-brace", r"\{"))
+            ],
+            (
+                "LaTeX unbraced \\newcommand name and body",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r"<body><p>\( \newcommand\h\href \h{search-ms:query=secret}{Click} \)</p></body></html>",
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
+            *[
+                (
+                    f"LaTeX macro definition {label} is rejected",
+                    '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                    + r"<body><p>\( " + tex + r" \)</p></body></html>",
+                    r"Disallowed LaTeX macro definition\(s\).*" + expected,
+                )
+                for label, tex, expected in (
+                    ("\\newcommand (harmless math)", r"\newcommand{\R}{\mathbb{R}} x \in \R", r"\\newcommand"),
+                    ("\\def (harmless math)", r"\def\norm#1{\left\|#1\right\|} \norm{v}", r"\\def"),
+                    ("\\let", r"\let\a=\alpha \a", r"\\let"),
+                    ("\\renewcommand*", r"\renewcommand*{\vec}[1]{\mathbf{#1}}", r"\\renewcommand"),
+                    ("\\newenvironment", r"\newenvironment{e}{}{}", r"\\newenvironment"),
+                    ("split by <wbr>", r"\new<wbr>command{\R}{\mathbb{R}}", r"\\newcommand"),
+                    ("\\DeclarePairedDelimiterX", r"\DeclarePairedDelimiterX{\h}[1]{(}{)}{\href{#1}{x}}", r"\\DeclarePairedDelimiterX"),
+                    (
+                        "with ]-in-braces default",
+                        r"\newcommand{\h}[1][{]}]{\href{#1}} \h[search-ms:query=secret]{Click}",
+                        r"\\newcommand",
+                    ),
+                )
+            ],
+            *[
+                (
+                    f"MathJax-only command {label} is rejected",
+                    '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                    + r"<body><p>\( " + tex + r" \)</p></body></html>",
+                    r"Disallowed MathJax-only LaTeX command\(s\).*" + expected,
+                )
+                for label, tex, expected in (
+                    ("\\mmlToken href", r'\mmlToken{mi}[href="search-ms:q"]{x}', r"\\mmlToken"),
+                    ("\\bbox CSS url()", r"\bbox[background:url(file:///C:/Windows/win.ini)]{x}", r"\\bbox"),
+                    ("\\bbox harmless colour", r"\bbox[yellow]{x}", r"\\bbox"),
+                    ("\\require", r"\require{mathtools} x", r"\\require"),
+                    ("split by an HTML comment", r'\mml<!-- -->Token{mi}[href="search-ms:q"]{x}', r"\\mmlToken"),
+                )
+            ],
+            (
+                "LaTeX bare \\url in prose outside <code>",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>Lệnh \url dùng để chèn liên kết.</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\url \(missing or unbraced argument\)",
+            ),
+            (
+                "LaTeX \\href with control-sequence argument",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \def\u{search-ms:query=secret} \href\u{Click} \)</p></body></html>',
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href \(missing or unbraced argument\)",
+            ),
+            (
+                "LaTeX \\href whose % is literal inside the URL braces",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                "<body><p>\\( \\href{https://ok.example/%\n}{Click} \\href{search-ms:y}{Click} \\)</p></body></html>",
+                r"Disallowed dangerous URI\(s\).*LaTeX \\href\{search-ms:y\}",
+            ),
+            (
+                "LaTeX \\newcommand wrapper around \\style{#1}",
+                '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>'
+                r'<body><p>\( \newcommand{\s}[1]{\style{#1}{x}} \s{background:url(https://evil.example/a)} \)</p></body></html>',
+                r"Disallowed LaTeX macro definition\(s\)",
+            ),
         ]
         for label, bad_html, expected_rx in red_team_cases:
             with self.subTest(case=label):
@@ -1933,6 +2243,84 @@ class TestHtmlPackagerCoreAndTranscript(unittest.TestCase):
         out_s = buf.getvalue()
         self.assertEqual(out_s.count("=== MANIFEST JSON END ==="), 1)
         self.assertIn("[manifest-marker]", out_s)
+
+
+class TestMathJaxLinkGuard(unittest.TestCase):
+    MJ = '<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>'
+
+    def setUp(self) -> None:
+        self._tmp_ctx = tempfile.TemporaryDirectory()
+        self.tmp_dir = Path(self._tmp_ctx.name)
+
+    def tearDown(self) -> None:
+        self._tmp_ctx.cleanup()
+
+    def _page(self, head: str) -> str:
+        return f"<!DOCTYPE html><html><head><title>T</title>{head}</head><body><p>\\( \\href{{https://example.org}}{{x}} \\)</p></body></html>"
+
+    def test_inject_places_guard_once_before_mathjax(self) -> None:
+        commented = '<!-- <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script> -->'
+        html, injected = mjg.inject_mathjax_link_guard(self._page(commented + self.MJ))
+        self.assertTrue(injected)
+        self.assertEqual(html.count(mjg.MATHJAX_LINK_GUARD_TAG), 1)
+        self.assertLess(html.index(commented), html.index(mjg.MATHJAX_LINK_GUARD_TAG))  # skips the commented tag
+        self.assertEqual(html.index(mjg.MATHJAX_LINK_GUARD_TAG) + len(mjg.MATHJAX_LINK_GUARD_TAG), html.index(self.MJ))
+        again, _ = mjg.inject_mathjax_link_guard(html)
+        self.assertEqual(again, html)  # idempotent
+        plain = "<!DOCTYPE html><html><head></head><body><p>Hi</p></body></html>"
+        self.assertEqual(mjg.inject_mathjax_link_guard(plain), (plain, False))
+
+    def test_guard_script_filters_unsafe_links(self) -> None:
+        body = mjg.MATHJAX_LINK_GUARD_BODY
+        self.assertIn("renderActions", body)
+        self.assertIn(r"var SAFE = /^\s*(?:https?:|mailto:|#)/i;", body)
+        self.assertIn("removeAttribute('href')", body)
+
+    def test_qa_allows_guard_and_requires_it_before_mathjax(self) -> None:
+        guarded, _ = mjg.inject_mathjax_link_guard(self._page(self.MJ))
+        for skip in (False, True):  # reader-shell mode and PreserveLayout
+            scanner = qa.run_html_qa_check(
+                guarded, skip_table_wrapper_check=skip, allowed_inline_scripts=frozenset(), require_mathjax_guard=True
+            )
+            self.assertEqual(len(scanner.allowed_inline_script_raw_bodies), 1)
+        with self.assertRaisesRegex(ValueError, "not preceded by the Max-Luka-Loop MathJax link guard"):
+            qa.run_html_qa_check(self._page(self.MJ), skip_table_wrapper_check=True, require_mathjax_guard=True)
+        guard_after = self._page(self.MJ + mjg.MATHJAX_LINK_GUARD_TAG)
+        with self.assertRaisesRegex(ValueError, "not preceded by the Max-Luka-Loop MathJax link guard"):
+            qa.run_html_qa_check(guard_after, skip_table_wrapper_check=True, require_mathjax_guard=True)
+        # Without the requirement (standalone HtmlToPdf of an older output) a guard-less page still passes.
+        qa.run_html_qa_check(self._page(self.MJ), skip_table_wrapper_check=True)
+        # A tampered guard is just another inline script.
+        tampered = guarded.replace("mailto:|#", "mailto:|search-ms:|#")
+        with self.assertRaisesRegex(ValueError, r"Disallowed <script> tag\(s\)"):
+            qa.run_html_qa_check(tampered, skip_table_wrapper_check=True, require_mathjax_guard=True)
+
+    def test_packager_injects_guard_with_csp_hash_in_both_modes(self) -> None:
+        draft = self.tmp_dir / "draft.html"
+        draft.write_text(self._page(self.MJ), encoding="utf-8")
+        for mode, preserve in (("shell", False), ("layout", True)):
+            with self.subTest(mode=mode):
+                out, _ = pkg.embed_images_and_package(
+                    html_path=draft,
+                    optimize_image_bytes_fn=iops._optimize_image_bytes,
+                    out_html_path=str(self.tmp_dir / f"{mode}.html"),
+                    preserve_layout=preserve,
+                )
+                txt = out.read_text(encoding="utf-8")
+                self.assertEqual(txt.count(mjg.MATHJAX_LINK_GUARD_TAG), 1)
+                self.assertLess(txt.index(mjg.MATHJAX_LINK_GUARD_TAG), txt.index("tex-mml-chtml.js"))
+                digest = base64.b64encode(hashlib.sha256(mjg.MATHJAX_LINK_GUARD_BODY.encode("utf-8")).digest()).decode()
+                self.assertIn(f"'sha256-{digest}'", txt)
+                if preserve:
+                    self.assertNotIn("data-reader-shell", txt)
+                # Re-packaging an output keeps a single guard.
+                again, _ = pkg.embed_images_and_package(
+                    html_path=out,
+                    optimize_image_bytes_fn=iops._optimize_image_bytes,
+                    out_html_path=str(self.tmp_dir / f"{mode}_again.html"),
+                    preserve_layout=preserve,
+                )
+                self.assertEqual(again.read_text(encoding="utf-8").count(mjg.MATHJAX_LINK_GUARD_TAG), 1)
 
 
 if __name__ == "__main__":

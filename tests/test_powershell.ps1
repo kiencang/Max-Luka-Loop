@@ -932,6 +932,7 @@ try {
 
     Invoke-TestCase 'Security hardening: NTFS ADS, metachar filenames, auto-sanitization, HtmlToPdf QA, allowlist, and CSP' {
         $extractPs1 = Join-Path $toolsDir 'extract_pdf_assets.ps1'
+        $fallbackPs1 = Join-Path $toolsDir 'pdf_fallback_tools.ps1'
         $packPs1 = Join-Path $toolsDir 'html_packager.ps1'
         $secDir = Join-Path $tmpRoot 'sec_hardening'
         [void][System.IO.Directory]::CreateDirectory($secDir)
@@ -980,6 +981,8 @@ try {
         $badPayloads = @(
             @{ Name = 'search_ms'; Html = '<!DOCTYPE html><html><head></head><body><a href="search-ms:crumb=location:\\evil\s">x</a></body></html>'; Rx = 'Disallowed dangerous URI' },
             @{ Name = 'latex_js';  Html = '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body><p>\( \href{javascript:alert(1)}{x} \)</p></body></html>'; Rx = 'Disallowed dangerous URI' },
+            @{ Name = 'latex_def'; Html = '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body><p>\( \def\h{\href} \h{search-ms:query=x}{x} \)</p></body></html>'; Rx = 'Disallowed dangerous URI' },
+            @{ Name = 'latex_br';  Html = '<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body><p>\( \href{ms-settings:display#{a}}{x} \)</p></body></html>'; Rx = 'Disallowed dangerous URI' },
             @{ Name = 'svg_anim';  Html = '<!DOCTYPE html><html><head></head><body><svg><animate attributeName="href" to="javascript:alert(1)"/></svg></body></html>'; Rx = 'Disallowed HTML tag' },
             @{ Name = 'css_iset';  Html = '<!DOCTYPE html><html><head><style>body{background:image-set("https://evil.example/px.png" 1x);}</style></head><body></body></html>'; Rx = 'Disallowed external resource' }
         )
@@ -992,6 +995,48 @@ try {
 
         $rAds = Invoke-CliPs1 $packPs1 @('-Action', 'EmbedImages', '-HtmlPath', $okDraft, '-OutHtmlPath', (Join-Path $secOut 'doc.html:evil.exe'), '-PreserveLayout')
         Assert-True ($rAds.ExitCode -ne 0 -and $rAds.Output -match 'NTFS Alternate Data Stream') "NTFS ADS output should be rejected: $($rAds.Output)"
+
+        $badBatOut = Join-Path $secOut 'autorun.bat'
+        $rBadHtmlExt = Invoke-CliPs1 $packPs1 @('-Action', 'EmbedImages', '-HtmlPath', $okDraft, '-OutHtmlPath', $badBatOut, '-PreserveLayout')
+        Assert-True ($rBadHtmlExt.ExitCode -ne 0 -and $rBadHtmlExt.Output -match 'Refusing invalid output file extension for -OutHtmlPath') "Non-.html -OutHtmlPath should be rejected: $($rBadHtmlExt.Output)"
+        Assert-True (-not (Test-Path -LiteralPath $badBatOut)) 'autorun.bat must not be created'
+
+        $badExePdf = Join-Path $secOut 'autorun.exe'
+        $rBadPdfExt = Invoke-CliPs1 $packPs1 @('-Action', 'HtmlToPdf', '-HtmlPath', $okDraft, '-OutPdfPath', $badExePdf)
+        Assert-True ($rBadPdfExt.ExitCode -ne 0 -and $rBadPdfExt.Output -match 'Refusing invalid output file extension for -OutPdfPath') "Non-.pdf -OutPdfPath should be rejected: $($rBadPdfExt.Output)"
+        Assert-True (-not (Test-Path -LiteralPath $badExePdf)) 'autorun.exe must not be created'
+
+        # 6. >300-page PDF page-tree bomb is blocked immediately by both extract_pdf_assets.ps1 and RenderPages
+        $bomb301Pdf = Join-Path $secDir 'bomb_301_pages.pdf'
+        $sb = New-Object System.Text.StringBuilder
+        [void]$sb.Append("%PDF-1.4`n")
+        $offsets = New-Object 'System.Collections.Generic.List[int]'
+        $kids = (3..303 | ForEach-Object { "$_ 0 R" }) -join ' '
+        $objs = @("1 0 obj`n<< /Type /Catalog /Pages 2 0 R >>`nendobj`n", "2 0 obj`n<< /Type /Pages /Kids [$kids] /Count 301 >>`nendobj`n")
+        for ($k = 3; $k -le 303; $k++) {
+            $objs += "$k 0 obj`n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>`nendobj`n"
+        }
+        foreach ($o in $objs) {
+            [void]$offsets.Add($sb.Length)
+            [void]$sb.Append($o)
+        }
+        $xrefPos = $sb.Length
+        [void]$sb.Append("xref`n0 $($objs.Count + 1)`n0000000000 65535 f `n")
+        foreach ($off in $offsets) {
+            [void]$sb.Append(("{0:D10} 00000 n `n" -f $off))
+        }
+        [void]$sb.Append("trailer`n<< /Size $($objs.Count + 1) /Root 1 0 R >>`nstartxref`n$xrefPos`n%%EOF`n")
+        [System.IO.File]::WriteAllBytes($bomb301Pdf, [System.Text.Encoding]::ASCII.GetBytes($sb.ToString()))
+
+        $bombExtractOut = Join-Path $secDir 'bomb_assets'
+        $rBombExt = Invoke-CliPs1 $extractPs1 @('-PdfPath', $bomb301Pdf, '-OutDir', $bombExtractOut, '-Meta')
+        Assert-True ($rBombExt.ExitCode -ne 0 -and $rBombExt.Output -match '301 pages, exceeding the 300-page safety limit') "extract_pdf_assets.ps1 should block >300-page PDF: $($rBombExt.Output)"
+        Assert-True (-not (Test-Path -LiteralPath $bombExtractOut)) 'bomb_assets must not be created'
+
+        $bombPagesOut = Join-Path $secDir 'bomb_pages'
+        $rBombRen = Invoke-CliPs1 $fallbackPs1 @('-Action', 'RenderPages', '-PdfPath', $bomb301Pdf, '-OutDir', $bombPagesOut, '-Pages', '1')
+        Assert-True ($rBombRen.ExitCode -ne 0 -and $rBombRen.Output -match '301 pages, exceeding the 300-page safety limit') "RenderPages should block >300-page PDF: $($rBombRen.Output)"
+        Assert-True (-not (Test-Path -LiteralPath $bombPagesOut)) 'bomb_pages must not be created'
     }
 } finally {
     Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue

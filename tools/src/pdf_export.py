@@ -111,6 +111,7 @@ def html_to_pdf(
     dest_pdf = prepare_sanitized_output_path(
         raw_pdf if raw_pdf else str(abs_html.with_suffix(".pdf")),
         label="-OutPdfPath",
+        expected_ext=".pdf",
     )
 
     pdf_idx = find_next_available_index([dest_pdf])
