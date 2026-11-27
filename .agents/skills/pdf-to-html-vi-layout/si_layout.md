@@ -20,6 +20,7 @@ Bạn là **Kỹ sư Dàn trang & Typographer Cao cấp**. Với bản dịch đ
 ### 2.1 Quy tắc Font chữ Không chân Thống nhất
 - **Font chính (`--font-sans`):** Bắt buộc ưu tiên **`'Inter'`** (hỗ trợ dấu tiếng Việt sắc nét, gọn bề ngang giúp văn bản tiếng Việt dễ nằm gọn trong các cột/hộp hẹp của thiết kế gốc, đủ trọng số `400–800` và `tabular-nums` căn thẳng số liệu; nạp qua `@import` duy nhất ở Mục 2.4) kèm fallback hệ thống Windows/offline **`'Segoe UI', Roboto, 'Noto Sans', Arial, sans-serif`**.
 - **Font monospace (cho code/mã số):** `'JetBrains Mono', Consolas, 'Courier New', monospace`.
+- **Không bắt chước font của bản gốc:** Kể cả khi PDF gốc dùng font có chân (serif), chữ thư pháp hay font trang trí, **mọi** văn bản trong `work\draft.html` (thân bài, tiêu đề, bảng, chú thích, callout) vẫn dùng `--font-sans` (Inter). Không khai báo `font-family` nào khác ngoài `--font-sans` và `--font-mono`. Muốn gợi lại sự khác biệt của bản gốc thì chỉ dùng cỡ chữ, độ đậm, nghiêng hoặc màu.
 - **Cỡ chữ thân bài mặc định:** **`18px`**, `line-height: 1.6`.
   - *Linh hoạt cục bộ theo thiết kế gốc:* Cho phép hạ nhẹ cỡ chữ có kiểm soát (`14px–16.5px`) tại các ô bảng nhiều cột, thẻ thông số hẹp, `running-header`, `figcaption` hoặc `footnotes` để giữ nguyên tỷ lệ khung trang PDF gốc mà không bị tràn vỡ.
 
@@ -116,6 +117,7 @@ p { margin: 0 0 0.85em; }
 img, svg { max-width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; border-radius: 4px; }
 figure { margin: 1.1rem 0; break-inside: avoid; page-break-inside: avoid; }
 figcaption { font-size: 0.88rem; color: var(--doc-muted); line-height: 1.45; margin-top: 0.45rem; }
+.fig-labels { display: block; font-style: italic; margin-top: 0.25rem; }
 td img, th img { margin: 0.2rem auto; }
 
 /* Bảng biểu học thuật & bảng lưới */
@@ -212,7 +214,7 @@ pre code { background: transparent; padding: 0; }
    - Block math đặt trong `<div style="text-align: center; margin: 12px 0; break-inside: avoid;">\[ ... \]</div>`; chừa khoảng trắng quanh `<` và `>` trong LaTeX (`\( x < y \)`); **không** bọc LaTeX trong `<code>` hay `<pre>`.
    - **KHÔNG** định nghĩa macro LaTeX (`\newcommand`, `\renewcommand`, `\def`, `\let`, `\newenvironment`...): viết công thức đầy đủ (vd `\mathbb{R}`, không đặt `\R`) — Auto-QA từ chối mọi định nghĩa macro, cùng các lệnh riêng của MathJax `\mmlToken`, `\bbox` (đóng khung công thức dùng `\boxed{...}`) và `\require`; khi câu văn nhắc tên một lệnh LaTeX (vd `\url`), đặt tên lệnh đó trong `<code>`.
 7. **Chuyển hóa sạch Tag trung gian & Liên kết `References`:**
-   - Thay thế trọn vẹn mọi tag tạm từ `work\translated.md` (`<!-- p:N -->`, `<!-- cont -->`, `[HEADER]`, `[FOOTER]`, `[FIG:]`, `[TBL-IMG:]`, `[DIAGRAM-A]`, `[CALLOUT]`, `[FN]`) bằng cấu trúc HTML/CSS tương ứng — **tuyệt đối không để sót tag thô trong `work\draft.html`**.
+   - Thay thế trọn vẹn mọi tag tạm từ `work\translated.md` (`<!-- p:N -->`, `<!-- cont -->`, `[HEADER]`, `[FOOTER]`, `[FIG:]`, `[FIG-LABELS]`, `[TBL-IMG:]`, `[DIAGRAM-A]`, `[CALLOUT]`, `[FN]`) bằng cấu trúc HTML/CSS tương ứng — **tuyệt đối không để sót tag thô trong `work\draft.html`**.
    - Với `References` / `Bibliography`: giữ nguyên phần nhận diện không dịch kèm định dạng in đậm/nghiêng gốc, dùng `ul.ref-list` nếu bản gốc thụt lề ngược (*hanging indent*), và chuyển mọi **URL / DOI** thành liên kết `<a href="..." target="_blank" rel="noopener">` nhấp được.
 
 ---
@@ -226,6 +228,7 @@ pre code { background: transparent; padding: 0; }
      - Có thể tính gần đúng tỷ lệ bề rộng hiển thị của ảnh (vd `width = (x1 - x0) * 100%`) để hình minh họa trên `.pdf-page` có kích thước tương xứng bản gốc (kết hợp `max-width: 100%`).
    - **Giữ đúng thứ tự trên–dưới:** Xếp ảnh chính xác thứ tự **như trong bản gốc** và đặt mỗi ảnh cạnh đúng đoạn/bước văn bản nằm ngang hàng với nó trong PDF gốc. **Tên tệp `fig_pX_Y` không phải thứ tự đọc**. Nếu hình có số/nhãn in sẵn (①, ②, *Step 3*, *(a)*…), mở xem ảnh để đọc nhãn và đối chiếu với vị trí trên trang gốc, tuyệt đối không suy thứ tự hay số bước từ tên tệp.
    - **`placement` (`"figure"` | `"table_cell"`):** Khi là `"table_cell"`, đặt `<img src="assets/..." alt="..." style="max-width: 140px;">` vào đúng ô `<td>` của hàng bảng khớp `context`. Khi là `"figure"`, đặt trong `<figure>...</figure>` (chỉ thêm `<figcaption>` nếu gốc có chú thích, lấy toàn văn từ `work\translated.md` / PDF gốc, **không** dùng chuỗi rút gọn 20 từ `...` trên stdout).
+   - **Nhãn chữ trên ảnh Nhóm B (`[FIG-LABELS]`):** Giữ nguyên ảnh; **tuyệt đối không** đặt chữ dịch chồng lên ảnh (`position: absolute`, lớp phủ…) dù để "giữ thiết kế" — chữ đè luôn xô lệch. Chuyển dòng `[FIG-LABELS]` thành `<span class="fig-labels">Nhãn trên hình: Time (s) → Thời gian (s); …</span>` đặt **cuối `<figcaption>`, ngay sau chú thích**. Hình không có chú thích: vẫn thêm `<figcaption>` chỉ chứa dòng này, ngay dưới ảnh và rộng bằng ảnh. Không có dòng `[FIG-LABELS]` thì không thêm gì.
    - **`source`, `drawings`, `width_px`, `height_px`, `dpi`:**
      - `"raster"` hoặc `"hybrid"` → **Nhóm B** (giữ nguyên `<img src="assets/...">`; nếu chữ trong hình Nhóm B mờ, chạy lại Bước 1 với `-Dpi 250/300`).
      - `"vector"` kèm `drawings` thấp/vừa (`<= ~30–50`) → ưu tiên tái tạo bằng HTML/CSS (**Nhóm A**) phối đúng bảng màu và font của `.pdf-page` (rất sắc nét và dễ căn kích thước theo thiết kế trang; nếu đã tái tạo hoàn chỉnh thì bỏ PNG gốc để tránh trùng). `"vector"` nhiều nét phức tạp (scatter/ROC/violin plot...) → **Nhóm B**, giữ nguyên PNG.
@@ -241,6 +244,6 @@ pre code { background: transparent; padding: 0; }
 - **Rà lại `work\draft.html` trước khi chạy `tools\html_packager.ps1 ... -PreserveLayout -AlsoPdf -CleanDir 'work'`:**
   1. Đã hoàn chỉnh cấu trúc `<!DOCTYPE html><html><head>...</head><body>...</body></html>`, dùng font `'Inter'` (cỡ thân bài `18px`), mỗi trang nằm gọn trong `<section id="pdf-page-N" class="pdf-page">` có chiều cao `auto` (không bị `overflow: hidden` cắt chữ) và chiều rộng `--page-width` trong `740px–1000px`?
   2. Luồng chữ 2–3 cột liên tục đã dùng `.multi-column-flow` (không chặt đôi khiến cột 1 hụt chân)? Không dùng `<table>` để chia cột trang?
-  3. Đã chuyển **đủ 100%** nội dung từ `work\translated.md` (không sót câu/trang, nối mượt `<!-- cont -->`, chú thích chân trang đặt đúng trang, không lọt tạp âm scan) và **không còn sót tag trung gian thô** (`[FIG:]`, `[CALLOUT]`, `[DIAGRAM-A]`, `<!-- p:... -->`...)?
-  4. Mọi minh họa trong PDF gốc đều có mặt đúng vùng `box` và **đúng thứ tự trên–dưới trong từng cột như bản gốc** (đối chiếu nhãn/số in trên hình nếu có, không xếp theo tên tệp) (ảnh Nhóm B dùng `src="assets/..."` + toàn văn `<figcaption>`, ảnh ô bảng nằm đúng `<td>`, sơ đồ Nhóm A dựng đẹp bằng HTML/CSS, link DOI/URL trong `References` bấm được)?
+  3. Đã chuyển **đủ 100%** nội dung từ `work\translated.md` (không sót câu/trang, nối mượt `<!-- cont -->`, chú thích chân trang đặt đúng trang, không lọt tạp âm scan) và **không còn sót tag trung gian thô** (`[FIG:]`, `[FIG-LABELS]`, `[CALLOUT]`, `[DIAGRAM-A]`, `<!-- p:... -->`...)?
+  4. Mọi minh họa trong PDF gốc đều có mặt đúng vùng `box` và **đúng thứ tự trên–dưới trong từng cột như bản gốc** (đối chiếu nhãn/số in trên hình nếu có, không xếp theo tên tệp) (ảnh Nhóm B dùng `src="assets/..."` + toàn văn `<figcaption>` + dòng nhãn `fig-labels` in nghiêng nếu hình có nhãn chữ cần dịch, không có chữ nào đè lên ảnh, ảnh ô bảng nằm đúng `<td>`, sơ đồ Nhóm A dựng đẹp bằng HTML/CSS, link DOI/URL trong `References` bấm được)?
   5. Đã chừa khoảng trắng quanh `<` / `>` trong LaTeX (`\( x < y \)`) và không bọc LaTeX trong `<code>`/`<pre>`?

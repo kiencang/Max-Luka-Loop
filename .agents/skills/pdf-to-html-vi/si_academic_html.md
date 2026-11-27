@@ -166,6 +166,7 @@ figure img { margin: 0.4rem auto 0.9rem; border-radius: 4px; }
 td img, th img { margin: 0.25rem auto; border-radius: 4px; }
 body[data-theme="dark"] figure img { filter: brightness(0.9) contrast(1.04); }
 figcaption { font-size: 0.93rem; color: var(--muted); line-height: 1.5; }
+.fig-labels { display: block; font-style: italic; margin-top: 0.35rem; }
 
 /* Bảo vệ Bảng */
 .table-wrapper { width: 100%; overflow-x: auto; margin-bottom: 1.5rem; -webkit-overflow-scrolling: touch; }
@@ -231,6 +232,17 @@ h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; line-heigh
    - Đánh giá độc lập cho từng hình trên cùng tài liệu (sơ đồ 1 dựng HTML/CSS, biểu đồ 2 giữ PNG là hợp lệ).
    - **Nhóm A — Ưu tiên tái tạo bằng HTML/CSS:** Sơ đồ luồng/quy trình (*flowchart*), sơ đồ kiến trúc khối + mũi tên quy mô vừa (≤ ~15 khối), cây phân cấp/tổ chức, ma trận so sánh (`2×2`, `3×3`), timeline, hoặc biểu đồ cột ít thanh có sẵn số liệu (`"vector"` với `drawings` thấp/vừa `<= 30–50`). Bọc trong `<figure>` kèm `<figcaption>`, không tràn ngang (`max-width: 100%; overflow-x: auto;`), dịch trọn vẹn nhãn chữ, **BẮT BUỘC dùng biến màu CSS (`--bg`, `--surface`, `--text`, `--border`, `--accent`)** để tương thích cả 3 giao diện (Sáng/Dịu mắt/Tối), tuyệt đối không tự bịa số liệu.
    - **Nhóm B — Giữ nguyên ảnh PNG (`<img src="assets/...">`):** Ảnh chụp thực tế (mẫu vật, hiện trường, y khoa, thiết bị, giao diện UI), `"raster"` / `"hybrid"` (bitmap có mũi tên vector đè lên), biểu đồ khoa học dày đặc (`"vector"` hàng trăm/nghìn `drawings` như scatter/ROC/violin/heatmap/phổ kỹ thuật), bản đồ, mạch điện, hoặc công thức cấu tạo hóa học phức tạp — mọi trường hợp dễ mất chi tiết hoặc sai tỷ lệ khi vẽ lại.
+5. **Dịch nhãn chữ trên ảnh Nhóm B (không bao giờ đè chữ lên ảnh):** Giữ nguyên ảnh PNG; **tuyệt đối không** đặt chữ dịch chồng lên ảnh (`position: absolute`, lớp phủ, SVG/ảnh nền…). Khi ảnh `placement = "figure"` có nhãn chữ tiếng nước ngoài (tên trục, chú giải, tên khối/bộ phận, chữ trên ảnh chụp), ghi các cặp **gốc → dịch** trong `<span class="fig-labels">` đặt **cuối `<figcaption>`, ngay sau chú thích**:
+   ```html
+   <figure>
+     <img src="assets/fig_p3_1.png" alt="Biểu đồ áp suất theo thời gian">
+     <figcaption>Hình 3: Áp suất theo thời gian ở ba mức nhiệt độ.
+       <span class="fig-labels">Nhãn trên hình: Time (s) → Thời gian (s); Pressure → Áp suất; Inlet → Cửa vào.</span></figcaption>
+   </figure>
+   ```
+   - Hình **không có chú thích**: vẫn thêm `<figcaption>` chỉ chứa dòng `fig-labels`, nằm ngay dưới ảnh (không bịa số hình hay chú thích).
+   - **Không dịch:** số, đơn vị, ký hiệu biến/công thức, chữ đánh dấu hình con (*(a)*, *(b)*), tên riêng/thương hiệu/mã hiệu, chữ đã là tiếng Việt. Nhãn lặp lại chỉ ghi 1 lần. Không còn nhãn nào cần dịch → không thêm dòng `fig-labels`.
+   - Ảnh nhiều nhãn: giữ thứ tự đọc trên hình (trái → phải, trên → dưới); hình ghép nhiều hình con có thể ghi theo từng hình con (`(a) Input → Đầu vào; (b) …`).
 
 ### 4.4 Công thức Toán học (MathJax + LaTeX)
 - **Khi tài liệu có biểu thức/công thức toán học:**
@@ -252,6 +264,6 @@ h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; line-heigh
 ## 5. Chốt Chặn Kiểm Định Nội dung & Thẩm mỹ (Trước khi Đóng gói)
 *(Các lỗi kỹ thuật cơ học như ảnh chưa nhúng, thiếu `alt`, quên `.table-wrapper`, quên MathJax `<script>` hay link `#id` gãy sẽ được `html_packager.ps1` kiểm tra tự động; trước khi chạy Bước 4, rà nhanh 4 lỗi mà máy không tự bắt được sau:)*
 1. **Đầy đủ 100% & Văn phong Học thuật:** Không bỏ sót/tóm tắt đoạn văn, phụ lục, bảng dài hay `References`; văn phong tiếng Việt thoát ly trật tự tiếng Anh nhưng giữ trọn khẳng định/`hedging`/nhân quả/ngôi xưng, đã khử gạch nối ngắt dòng PDF, giữ đúng chữ Hy Lạp/chỉ số hóa học và lọc sạch tạp âm bản scan.
-2. **Đặt đúng ảnh & Chú thích đầy đủ:** Mọi ảnh Nhóm B nằm đúng mạch văn/ô `<td>` (đã nhìn trực tiếp ảnh để gán 1–1, không lắp mù), toàn văn `<figcaption>` khớp PDF gốc (không dính `...`), không trùng lặp PNG + sơ đồ HTML/CSS.
+2. **Đặt đúng ảnh & Chú thích đầy đủ:** Mọi ảnh Nhóm B nằm đúng mạch văn/ô `<td>` (đã nhìn trực tiếp ảnh để gán 1–1, không lắp mù), toàn văn `<figcaption>` khớp PDF gốc (không dính `...`), không trùng lặp PNG + sơ đồ HTML/CSS; ảnh Nhóm B có nhãn chữ cần dịch đã có dòng `fig-labels` in nghiêng (Mục 4.3 ý 5) và không có chữ nào đè lên ảnh.
 3. **Tương thích `reader_shell.html` & Chế độ Tối:** Đủ khung CSS biến màu từ Mục 4.1, đầu bài đặt trong `<header>` và thân bài bọc trong `<article>` (`<h1>`–`<h3>`); sơ đồ Nhóm A dùng `var(--...)` (không hardcode `#000`/`#fff`).
 4. **An toàn LaTeX & Ký tự đặc biệt:** Đã chừa khoảng trắng quanh `<` và `>` (`\( x < y \)`); không bọc LaTeX trong `<code>`/`<pre>`; gắn `.cjk` cho đoạn trích chữ Hoa/Nhật nếu có.

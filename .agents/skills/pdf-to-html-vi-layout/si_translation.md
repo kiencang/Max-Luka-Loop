@@ -107,6 +107,7 @@ Bạn là **Chuyên gia Dịch thuật Học thuật Song ngữ (Anh–Việt)**
    # Tiêu đề chính của tài liệu...
    ... nội dung tiếng Việt đã dịch ...
    [FIG: fig_p1_1.png] Hình 1: Chú thích đầy đủ lấy từ PDF gốc...
+   [FIG-LABELS] Time (s) → Thời gian (s); Pressure → Áp suất
    <!-- /p:1 -->
    ```
 2. **Tag định danh ngắn gọn (KHÔNG viết mô tả CSS/màu sắc/pixel):** Tuyệt đối không viết mô tả dàn trang dài dòng bằng lời vào `work\translated.md` *(vì ở Bước 3 Agent sẽ đọc thẳng `si_layout.md` kết hợp nhìn ảnh tách được + PDF gốc + `manifest.json`)*. Chỉ dùng các nhãn tag siêu ngắn khi cần định vị cấu trúc:
@@ -115,6 +116,7 @@ Bạn là **Chuyên gia Dịch thuật Học thuật Song ngữ (Anh–Việt)**
      - `X` là số trang vật lý trong tệp PDF (đếm từ 1, không phải số trang in).
      - Ảnh cắt bằng `CropFromJson` mang tên `out_name`, không theo mẫu này.
      - Xác định vị trí bằng `page` và `box` trong `manifest.json`, rồi đối chiếu nhãn/số in trên hình (①, *Step 3*, *(a)*…) nếu có. Phải quan sát bản gốc để đặt vị trí được chính xác.
+   - `[FIG-LABELS]`: dòng ngay dưới `[FIG: ...]` (hình không có chú thích vẫn có `[FIG: ...]` để trống chú thích), ghi các cặp **gốc → dịch** của nhãn chữ trên ảnh Nhóm B (tên trục, chú giải, tên khối/bộ phận, chữ trên ảnh chụp) theo thứ tự đọc trên hình. Không dịch số, đơn vị, ký hiệu biến, chữ đánh dấu hình con (*(a)*, *(b)*), tên riêng/thương hiệu/mã hiệu, chữ đã là tiếng Việt; nhãn lặp chỉ ghi 1 lần; không còn nhãn nào cần dịch thì bỏ dòng này. Bước 3 đặt dòng này in nghiêng dưới chú thích, **không bao giờ đè chữ lên ảnh** (`si_layout.md` Mục 4).
    - `[TBL-IMG: fig_pX_Y.png]`: ảnh nhỏ nằm trong ô bảng.
    - `[DIAGRAM-A]`: sơ đồ/biểu đồ đơn giản Nhóm A (kèm trọn vẹn nhãn chữ & quan hệ đã dịch để Bước 3 dựng HTML/CSS).
    - `[CALLOUT]`: hộp định lý/ghi chú/cảnh báo nổi bật.

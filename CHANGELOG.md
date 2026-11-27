@@ -2,6 +2,17 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [Unreleased]
+### Changed
+Port từ Luka-Loop v1.1.34 và v1.1.47 (chỉ tài liệu skill, không đổi mã).
+- **Chế độ giữ thiết kế không bắt chước font của bản gốc** (`si_layout.md` Mục 2.1): kể cả khi PDF gốc dùng font có chân, chữ thư pháp hay font trang trí, mọi văn bản trong `work\draft.html` vẫn dùng `--font-sans` (Inter); không khai báo `font-family` nào khác ngoài `--font-sans` và `--font-mono`.
+- **Hai skill dịch thống nhất cách dịch nhãn chữ trên ảnh giữ dạng PNG (Nhóm B):** trước đây chỉ sơ đồ dựng lại bằng HTML/CSS (Nhóm A) được dặn dịch nhãn, nên với ảnh PNG agent lúc bỏ qua nhãn, lúc dịch, lúc đặt chữ dịch đè lên ảnh (xô lệch). Nay cả hai skill:
+  - cấm đặt chữ dịch chồng lên ảnh, ảnh giữ nguyên;
+  - ghi các cặp nhãn **gốc → dịch** in nghiêng trong `<span class="fig-labels">` ở cuối `<figcaption>`, ngay sau chú thích; hình không có chú thích thì `<figcaption>` chỉ chứa dòng nhãn, ngay dưới ảnh;
+  - không dịch số, đơn vị, ký hiệu, chữ đánh dấu hình con, tên riêng, chữ đã là tiếng Việt; không còn nhãn cần dịch thì không thêm dòng;
+  - `pdf-to-html-vi`: `si_academic_html.md` Mục 4.3 ý 5, CSS `.fig-labels`, mục tự kiểm 2;
+  - `pdf-to-html-vi-layout`: tag mới `[FIG-LABELS]` trong `work\translated.md` (`si_translation.md`), quy tắc dựng và CSS trong `si_layout.md`, danh sách tag trong `SKILL.md`.
+
 ## [1.1.4] - 2026-11-27
 ### Security
 Port từ Luka-Loop v1.1.43 (mã đóng gói/QA của Max trước đó giống hệt Luka v1.1.42).
