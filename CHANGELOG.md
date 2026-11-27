@@ -6,6 +6,7 @@ Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** s
 ### Added
 - Ghim nguồn trọng số của mô hình Egret: `dev\egret\export_onnx.py` chỉ xuất từ commit `77ede7cc…` của repo `docling-project/docling-layout-egret-medium` trên Hugging Face và từ chối nếu `model.safetensors` không có SHA-256 `e7fc5b9a…` (trước đây lấy bản mới nhất của `main`, nên xuất lại có thể ra mô hình khác mà không ai biết). Mô hình phát hành, exe và kết quả dịch không đổi.
 - `dev\egret\verify_onnx_weights.py` (chỉ cần numpy + onnx): kiểm chứng tệp ONNX phát hành chứa đúng trọng số gốc đã ghim. Kết quả: 381 tensor trùng từng byte (67 ở dạng chuyển vị), 73 cặp Conv + BatchNorm gộp và 60 BatchNorm cố định của backbone khớp khi tính lại (sai lệch tối đa 1,6e-7); chỉ vắng các tensor dùng khi huấn luyện.
+- Mô hình ONNX tái tạo được từng byte: `dev\egret\requirements-export.txt` ghim các phiên bản công cụ (torch 2.15.0+cpu, transformers 5.24.0, huggingface_hub 2.4.0, onnx 1.23.2, onnxscript 0.7.2, onnxruntime 1.32.0, numpy 2.5.5, Python 3.12.7); xuất lại bằng `export_onnx.py` từ trọng số đã ghim cho đúng tệp phát hành (SHA-256 `06da7202…`). Cách làm ghi trong `dev\DEVELOPMENT.md`.
 - `THIRD_PARTY_LICENSES.md` mục 8 ghi commit, hash trọng số gốc và hash tệp ONNX, mô tả rõ phép gộp BatchNorm và các phần huấn luyện bị bỏ khi chuyển sang ONNX.
 
 ## [1.1.5] - 2026-11-28

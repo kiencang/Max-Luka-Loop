@@ -1,6 +1,8 @@
 """Export docling-layout-egret-medium (D-FINE) to ONNX and check it against PyTorch (dev only).
 
 Needs a dev venv with torch (CPU), transformers, onnx, onnxscript, onnxruntime, PyMuPDF, numpy, Pillow.
+With the versions in dev/egret/requirements-export.txt the export is reproducible: it rebuilds the released
+tools/models/egret_medium.onnx byte for byte (SHA-256 06da7202...fbcc). PyMuPDF and Pillow are only used by --check.
 The exported graph takes the already-preprocessed page tensor and returns raw outputs, so preprocessing
 and post-processing live in tools/src/figure_detector/egret.py, the same code the exe runs:
 

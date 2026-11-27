@@ -1,0 +1,13 @@
+# Tools that reproduce tools/models/egret_medium.onnx byte for byte (SHA-256 06da7202...fbcc) with
+# dev/egret/export_onnx.py on Python 3.12.7 (Windows x64). Dev only; not part of the build or the translation
+# workflow. Install into a fresh venv:
+#   python -m pip install -r dev\egret\requirements-export.txt --extra-index-url https://download.pytorch.org/whl/cpu
+# Another version of any package below may give an ONNX file with a different hash but the same weights:
+# check it with dev\egret\verify_onnx_weights.py and export_onnx.py --check.
+torch==2.15.0+cpu
+transformers==5.24.0
+huggingface_hub==2.4.0
+onnx==1.23.2
+onnxscript==0.7.2
+onnxruntime==1.32.0
+numpy==2.5.5
