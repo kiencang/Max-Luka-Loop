@@ -26,8 +26,35 @@ import torch
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tools" / "src"))
 
-MODEL_ID = "docling-project/docling-layout-egret-medium"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Pinned source of the released tools/models/egret_medium.onnx (see fetch_model.ps1). model.safetensors is identical
+# in every revision of the repo that has weights; 77ede7cc (2026-07-31) only renamed the labels in config.json, which
+# the ONNX graph does not carry. verify_onnx_weights.py checks the ONNX file against these exact weights.
+from verify_onnx_weights import MODEL_ID, MODEL_REVISION, MODEL_SAFETENSORS_SHA256  # noqa: E402
+
 INPUT_SIZE = 640
+
+
+def pinned_model_dir() -> Path:
+    """Download (or reuse from the HF cache) the pinned revision and refuse it unless the weights hash matches."""
+    from huggingface_hub import snapshot_download
+
+    local = Path(
+        snapshot_download(
+            MODEL_ID,
+            revision=MODEL_REVISION,
+            allow_patterns=["config.json", "preprocessor_config.json", "model.safetensors"],
+        )
+    )
+    weights = local / "model.safetensors"
+    digest = hashlib.sha256(weights.read_bytes()).hexdigest()
+    if digest != MODEL_SAFETENSORS_SHA256:
+        raise RuntimeError(
+            f"model.safetensors of {MODEL_ID}@{MODEL_REVISION[:12]} has sha256 {digest}, "
+            f"expected {MODEL_SAFETENSORS_SHA256}: refusing to export"
+        )
+    print(f"Weights {MODEL_ID}@{MODEL_REVISION[:12]} verified (sha256 {digest[:16]}...)")
+    return local
 
 
 class _RawOutputs(torch.nn.Module):
@@ -98,7 +125,7 @@ def _assert_float32_only(path: Path) -> None:
 def export(out_path: Path, opset: int) -> None:
     from transformers import DFineForObjectDetection
 
-    model = DFineForObjectDetection.from_pretrained(MODEL_ID).eval()
+    model = DFineForObjectDetection.from_pretrained(pinned_model_dir()).eval()
     dummy = torch.rand(1, 3, INPUT_SIZE, INPUT_SIZE)
     print(f"Frozen position embeddings: {_freeze_position_embeddings(model, dummy)}")
     wrapper = _RawOutputs(model).eval()
@@ -156,8 +183,9 @@ def check(onnx_path: Path, pdf_dir: Path, max_pages: int) -> None:
 
     from figure_detector import egret
 
-    model = DFineForObjectDetection.from_pretrained(MODEL_ID).eval()
-    processor = RTDetrImageProcessor.from_pretrained(MODEL_ID)
+    model_dir = pinned_model_dir()
+    model = DFineForObjectDetection.from_pretrained(model_dir).eval()
+    processor = RTDetrImageProcessor.from_pretrained(model_dir)
     session = egret.load_session(onnx_path)
 
     worst_logit = worst_box = 0.0

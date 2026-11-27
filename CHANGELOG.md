@@ -2,6 +2,12 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [Unreleased]
+### Added
+- Ghim nguồn trọng số của mô hình Egret: `dev\egret\export_onnx.py` chỉ xuất từ commit `77ede7cc…` của repo `docling-project/docling-layout-egret-medium` trên Hugging Face và từ chối nếu `model.safetensors` không có SHA-256 `e7fc5b9a…` (trước đây lấy bản mới nhất của `main`, nên xuất lại có thể ra mô hình khác mà không ai biết). Mô hình phát hành, exe và kết quả dịch không đổi.
+- `dev\egret\verify_onnx_weights.py` (chỉ cần numpy + onnx): kiểm chứng tệp ONNX phát hành chứa đúng trọng số gốc đã ghim. Kết quả: 381 tensor trùng từng byte (67 ở dạng chuyển vị), 73 cặp Conv + BatchNorm gộp và 60 BatchNorm cố định của backbone khớp khi tính lại (sai lệch tối đa 1,6e-7); chỉ vắng các tensor dùng khi huấn luyện.
+- `THIRD_PARTY_LICENSES.md` mục 8 ghi commit, hash trọng số gốc và hash tệp ONNX, mô tả rõ phép gộp BatchNorm và các phần huấn luyện bị bỏ khi chuyển sang ONNX.
+
 ## [1.1.5] - 2026-11-28
 ### Changed
 - `AGENTS.md`: dấu hiệu nhận diện Antigravity thêm nhãn `Artifact Directory Path` (`appDataDir` ghi rõ là của bản cũ).
