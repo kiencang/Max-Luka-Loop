@@ -15,7 +15,7 @@ Quy trình 4 bước tự động hoàn toàn (người dùng **không cần gõ
 ---
 
 ## Bước 1: Tách ảnh & Nạp Chỉ dẫn Chuyên Dịch (`si_translation.md`)
-> **Tối ưu token theo Pha (*Lazy Phase Loading*):** Ngay trong lượt Bước 1, chạy **đồng thời** lệnh tách ảnh dưới đây và **CHỈ đọc trọn 1 lần** [si_translation.md](./si_translation.md) (~126 dòng / ~17 KB — đọc toàn bộ trong một lần, không chia đoạn). **TUYỆT ĐỐI CHƯA đọc `si_layout.md` ở Bước 1** để giữ ngữ cảnh gọn nhẹ và giúp Agent dồn 100% sự tập trung cho chất lượng dịch thuật ở Bước 2.
+> **Tối ưu token theo Pha (*Lazy Phase Loading*):** Ngay trong lượt Bước 1, chạy **đồng thời** lệnh tách ảnh dưới đây và **CHỈ đọc trọn 1 lần** [si_translation.md](./si_translation.md) (~131 dòng / ~20 KB — đọc toàn bộ trong một lần, không chia đoạn). **TUYỆT ĐỐI CHƯA đọc `si_layout.md` ở Bước 1** để giữ ngữ cảnh gọn nhẹ và giúp Agent dồn 100% sự tập trung cho chất lượng dịch thuật ở Bước 2.
 
 Chọn 1 trong 2 lệnh sau tùy cách người dùng cung cấp tệp PDF:
 
@@ -62,7 +62,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'tools\extract_pdf_asset
 ---
 
 ## Bước 3: Nạp `si_layout.md` & Tái tạo Từng Trang vào `work\draft.html`
-1. **Nạp chỉ dẫn thiết kế:** Đọc **trọn 1 lần** [si_layout.md](./si_layout.md) (~241 dòng / ~20 KB — đọc toàn bộ trong một lần, không chia đoạn).
+1. **Nạp chỉ dẫn thiết kế:** Đọc **trọn 1 lần** [si_layout.md](./si_layout.md) (~249 dòng / ~23 KB — đọc toàn bộ trong một lần, không chia đoạn).
    - *Tiết kiệm token đọc lại:* Nếu tài liệu `<= 6 trang` và `work\translated.md` vừa được tạo ngay ở lượt trước (đã nằm đầy đủ trong ngữ cảnh), dùng trực tiếp để dựng HTML — **không đọc lại `work\translated.md`**; chỉ đọc lại theo từng đoạn khi tài liệu dài đã chia nhiều lô hoặc ngữ cảnh đã cũ.
 2. **Dựng `work\draft.html` (`<!DOCTYPE html> ... </html>`) chuẩn [si_layout.md](./si_layout.md):**
    - **Chế độ thuần HTML/CSS:** **TUYỆT ĐỐI KHÔNG** viết thanh công cụ đọc, hộp Mục lục tự động, lightbox phóng to ảnh hay bất kỳ `<script>` nào (ngoại trừ đúng 1 thẻ `<script id="MathJax-script" ...>` nếu bài có LaTeX `\( \)` / `\[ \]` — và nhớ **chừa khoảng trắng quanh `<` và `>`**: `\( x < y \)`). Chuyển hóa sạch toàn bộ tag trung gian từ `work\translated.md` (`[FIG:]`, `[FIG-LABELS]`, `[CALLOUT]`, `<!-- p:N -->`, `<!-- cont -->`...) và gắn `<a href="..." target="_blank" rel="noopener">` cho mọi URL/DOI trong `References`.
