@@ -43,7 +43,12 @@ Ngoài Antigravity, bạn có thể dùng công cụ với **Claude Code** (tab 
 ## Lý do tồn tại
 Tôi đã có sản phẩm https://github.com/kiencang/PDF-silaTranslator có chức năng tương đương, nhưng hiện tại chỉ API Key trả phí mới sử dụng được. 
 
-**Max Luka Loop và [Luka-Loop](https://github.com/kiencang/Luka-Loop):** Max Luka Loop được tách ra từ Luka-Loop (v1.1.17) để phát triển riêng. Khác biệt chính nằm ở khâu tách ảnh: Luka-Loop tìm hình bằng các quy tắc hình học, còn Max Luka Loop dùng mô hình bố cục **Egret Medium** của dự án [Docling](https://github.com/docling-project/docling) (IBM Research), nên cắt hình chính xác hơn và xử lý được cả PDF scan. Đổi lại, gói tải về nặng hơn (khoảng 220 MB so với khoảng 60 MB) và tách ảnh chậm hơn. Trên bộ kiểm thử DocLayNet (943 trang bài báo khoa học), số trang có lỗi tách hình nghiêm trọng giảm từ 44 xuống 14.
+**Max Luka Loop và [Luka-Loop](https://github.com/kiencang/Luka-Loop):** Max Luka Loop được tách ra từ Luka-Loop (v1.1.17) để phát triển riêng. Khác biệt chính nằm ở khâu tách ảnh: Luka-Loop tìm hình bằng các quy tắc hình học, còn Max Luka Loop dùng mô hình bố cục **Egret Medium** của dự án [Docling](https://github.com/docling-project/docling) (IBM Research), nên xử lý được cả PDF scan. Đổi lại, gói tải về nặng hơn (khoảng 120 MB so với khoảng 30 MB file nén .zip) và tách ảnh chậm hơn. Trên bộ kiểm thử DocLayNet (943 trang bài báo khoa học), số trang có lỗi tách hình nghiêm trọng giảm từ 44 xuống 14.
+
+## Tuyên bố từ chối trách nhiệm
+Công cụ này có thể được sử dụng cho mục đích nghiên cứu và học tập cá nhân.
+
+`Max Luka Loop` cũng như người phát triển nó không đưa ra bất kỳ bảo đảm rõ ràng hay ngụ ý nào, cũng như không tuyên bố rằng công cụ sẽ vận hành hoàn hảo, chính xác hoặc cập nhật. Người phát triển sẽ không chịu trách nhiệm cho bất kỳ tổn thất hay thiệt hại nào phát sinh trực tiếp hoặc gián tiếp liên quan đến hoặc phát sinh từ việc sử dụng công cụ này.
 
 ## Cấu trúc dự án
 - [`AGENTS.md`](./AGENTS.md) — Quy tắc điều phối dành cho AI Agent trong workspace.
@@ -60,11 +65,6 @@ Tôi đã có sản phẩm https://github.com/kiencang/PDF-silaTranslator có ch
 - `input/` — Thư mục chứa tệp tin đầu vào, quan trọng khi file PDF hơn 10MB thì cần đặt vào đó, nếu không đến giới hạn ấy, người dùng có thể tải lên ngay từ khung chat mà không cần đặt vào thư mục input;
 - `output/` — Thư mục chứa tệp đầu ra (`*_vi.html`/`*_vi.pdf` cho bản đọc mượt mặc định; `*_layout_vi.html`/`*_layout_vi.pdf` cho bản bảo toàn thiết kế; tự động thêm `_2`, `_3`... nếu dịch lại nhiều lần cùng một file), tự động được tạo khi đóng gói và được bỏ qua bởi [`.gitignore`](./.gitignore).
 - [`dev/`](./dev/), [`tests/`](./tests/), [`.github/workflows/`](./.github/workflows/) — Chỉ dành cho phát triển, không có trong gói phát hành: hướng dẫn phát triển ([`dev/DEVELOPMENT.md`](./dev/DEVELOPMENT.md)), công cụ xuất/đánh giá mô hình Egret ([`dev/egret/`](./dev/egret/)) và đánh giá trên DocLayNet ([`dev/eval_doclaynet.py`](./dev/eval_doclaynet.py)), bộ kiểm thử Python/PowerShell, và hai workflow GitHub Actions (`ci.yml` chạy kiểm thử, `release.yml` đóng gói `max-luka-loop-win-x64.zip` khi đẩy tag `v*`).
-
-## Tuyên bố từ chối trách nhiệm
-Công cụ này có thể được sử dụng cho mục đích nghiên cứu và học tập cá nhân.
-
-`Max Luka Loop` cũng như người phát triển nó không đưa ra bất kỳ bảo đảm rõ ràng hay ngụ ý nào, cũng như không tuyên bố rằng công cụ sẽ vận hành hoàn hảo, chính xác hoặc cập nhật. Người phát triển sẽ không chịu trách nhiệm cho bất kỳ tổn thất hay thiệt hại nào phát sinh trực tiếp hoặc gián tiếp liên quan đến hoặc phát sinh từ việc sử dụng công cụ này.
 
 ## Giấy phép & Thành phần Bên thứ ba (License & Third-Party Notices)
 
