@@ -2,6 +2,15 @@
 
 Tất cả những thay đổi đáng chú ý của dự án **Max Luka Loop** sẽ được ghi lại trong file này.
 
+## [1.1.7] - 2026-11-28
+### Changed
+- Hướng dẫn dịch (`si_academic_html.md`, `si_translation.md`):
+  - **Giữ đúng mức khẳng định của bản gốc:** từ đồng nghĩa chỉ chọn trong cùng mức nghĩa (`understand` → *hiểu*, *nắm được*; không đẩy lên *thấu suốt*). Không đa dạng hóa thuật ngữ và các từ mang mức độ: mỗi từ gốc giữ một cách dịch trong cả tài liệu, kèm thang từ yếu đến mạnh (`may` → *có thể*, `suggest` → *gợi ý rằng*, `indicate` → *chỉ ra*, `show` → *cho thấy*, `demonstrate` → *chứng minh*) và các từ chỉ mức chênh lệch, tần suất, phạm vi. Không tự thêm từ nhấn (*rất*, *hoàn toàn*, *rõ ràng*, *đáng kể*).
+  - **Quy đổi đơn vị:** số gốc đứng trước, số quy đổi trong ngoặc (`5 lbs (khoảng 2,3 kg)`, `77°F (25°C)`); số quy đổi không ghi chính xác hơn số gốc, làm tròn thì thêm "khoảng". Không quy đổi trong bảng, chỉ thêm một dòng chú thích quy đổi dưới bảng.
+  - `si_academic_html.md`: mục xử lý mơ hồ 3 cấp độ chuyển lên ngay sau quy tắc ngôi xưng.
+- Hai `SKILL.md`: cập nhật kích thước tệp SI (`si_academic_html.md` ~274 dòng / ~35 KB, `si_translation.md` ~141 dòng / ~22 KB).
+- `README.md`: cập nhật dung lượng gói nén (khoảng 120 MB so với khoảng 30 MB của Luka-Loop) và chuyển mục Tuyên bố từ chối trách nhiệm lên trước Cấu trúc dự án.
+
 ## [1.1.6] - 2026-11-28
 ### Added
 - Ghim nguồn trọng số của mô hình Egret: `dev\egret\export_onnx.py` chỉ xuất từ commit `77ede7cc…` của repo `docling-project/docling-layout-egret-medium` trên Hugging Face và từ chối nếu `model.safetensors` không có SHA-256 `e7fc5b9a…` (trước đây lấy bản mới nhất của `main`, nên xuất lại có thể ra mô hình khác mà không ai biết). Mô hình phát hành, exe và kết quả dịch không đổi.

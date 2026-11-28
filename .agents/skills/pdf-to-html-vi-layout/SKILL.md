@@ -15,7 +15,7 @@ Quy trình 4 bước tự động hoàn toàn (người dùng **không cần gõ
 ---
 
 ## Bước 1: Tách ảnh & Nạp Chỉ dẫn Chuyên Dịch (`si_translation.md`)
-> **Tối ưu token theo Pha (*Lazy Phase Loading*):** Ngay trong lượt Bước 1, chạy **đồng thời** lệnh tách ảnh dưới đây và **CHỈ đọc trọn 1 lần** [si_translation.md](./si_translation.md) (~131 dòng / ~20 KB — đọc toàn bộ trong một lần, không chia đoạn). **TUYỆT ĐỐI CHƯA đọc `si_layout.md` ở Bước 1** để giữ ngữ cảnh gọn nhẹ và giúp Agent dồn 100% sự tập trung cho chất lượng dịch thuật ở Bước 2.
+> **Tối ưu token theo Pha (*Lazy Phase Loading*):** Ngay trong lượt Bước 1, chạy **đồng thời** lệnh tách ảnh dưới đây và **CHỈ đọc trọn 1 lần** [si_translation.md](./si_translation.md) (~141 dòng / ~22 KB — đọc toàn bộ trong một lần, không chia đoạn). **TUYỆT ĐỐI CHƯA đọc `si_layout.md` ở Bước 1** để giữ ngữ cảnh gọn nhẹ và giúp Agent dồn 100% sự tập trung cho chất lượng dịch thuật ở Bước 2.
 
 Chọn 1 trong 2 lệnh sau tùy cách người dùng cung cấp tệp PDF:
 
